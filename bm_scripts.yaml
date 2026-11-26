@@ -180,6 +180,22 @@ script:
           }
           #endif
 interval:
+
+  - interval: 300ms
+    then:
+      - if:
+          condition:
+            not:
+              wifi.connected:
+          then:
+            - lvgl.bar.update:
+                id: wifi_progress_bar
+                value: !lambda |-
+                  static int progress = 0;
+                  progress += 5;
+                  if (progress > 90) progress = 10; // Loop smoothly until connected
+                  return progress;
+
   - interval: 1s
     then:
       - lambda: |-

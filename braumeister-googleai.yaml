@@ -10,8 +10,19 @@ esphome:
     - <vector>
     - braumeister_helpers.h
   on_boot:
-    priority: -100.0
+    priority: -100
     then:
+      - delay: 12s
+      - if:
+          condition:
+            not:
+              wifi.connected:
+          then:
+            - lvgl.label.update:
+                id: boot_status_label
+                text: "Starting in offline mode..."
+            - delay: 1s
+            - lvgl.widget.hide: boot_screen
       - script.execute: register_beerxml_uploader
   min_version: "2026.1.0"
 
@@ -59,6 +70,16 @@ wifi:
   ap:
     ssid: "BM-BrewController"
     ap_timeout: 5s
+  on_connect:
+    - lvgl.bar.update:
+        id: wifi_progress_bar
+        value: 100
+        animated: true
+    - lvgl.label.update:
+        id: boot_status_label
+        text: "Connected!"
+    - delay: 500ms
+    - lvgl.widget.hide: boot_screen
 
 captive_portal:
 

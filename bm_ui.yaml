@@ -29,6 +29,41 @@
     bg_color: 0x1E293B
 
 lvgl:
+  top_layer:
+    widgets:
+      - obj:
+          id: boot_screen
+          width: 800
+          height: 480
+          bg_color: 0x111111
+          border_width: 0
+          radius: 0
+          widgets:
+            - label:
+                id: boot_title
+                align: CENTER
+                y: -70
+                text: "BrauControl"
+                text_font: montserrat_42
+                text_color: 0xFFFFFF
+            - bar:
+                id: wifi_progress_bar
+                align: CENTER
+                y: 0
+                width: 450
+                height: 20
+                min_value: 0
+                max_value: 100
+                value: 0
+                bg_color: 0x333333
+                indicator:
+                  bg_color: 0xE67E22  # Brewing amber/orange accent
+            - label:
+                id: boot_status_label
+                align: CENTER
+                y: 45
+                text: "Initializing system and webserver..."
+                text_color: 0xAAAAAA
   displays:
     - my_display
   touchscreens:
@@ -53,7 +88,7 @@ lvgl:
         - obj:
             x: 25
             y: 10
-            width: 245
+            width: 345
             height: 38
             bg_color: 0x1E293B
             border_width: 2
@@ -65,7 +100,7 @@ lvgl:
               - label:
                   align: CENTER
                   text_color: 0xFACC15
-                  text: "BRAUMEISTER PRO"
+                  text: "BrauControl - Universal brew controller"
         - label:
             id: home_wifi_lbl
             align: TOP_RIGHT
