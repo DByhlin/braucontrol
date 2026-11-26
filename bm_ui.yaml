@@ -2189,7 +2189,7 @@ lvgl:
                             x: 24
                             y: 106
                             text_color: 0xCBD5E1
-                            text: "2. Open http://<IP-ADDRESS>/import in your browser."
+                            text: "2. Open http://<IP-ADDRESS>/brewcontrol in your browser."
                         - label:
                             x: 24
                             y: 146

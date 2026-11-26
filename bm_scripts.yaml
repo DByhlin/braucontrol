@@ -173,7 +173,7 @@ script:
             bool canHandle(AsyncWebServerRequest *request) const override {
               std::array<char, AsyncWebServerRequest::URL_BUF_SIZE> url_buf;
               auto url = request->url_to(url_buf);
-              return (url == "/import") && (request->method() == HTTP_GET || request->method() == HTTP_POST);
+              return (url == "/brewcontrol") && (request->method() == HTTP_GET || request->method() == HTTP_POST);
             }
             void handleRequest(AsyncWebServerRequest *request) override {
               if (request->method() == HTTP_POST) {
@@ -189,7 +189,51 @@ script:
                     int h2 = (id(num_elements) == 2) ? ((id(brew_state) == 0) ? (id(manual_htr_2) ? 1 : 0) : (id(current_heat_level) > 0.01f ? 1 : 0)) : -1;
                     int p1 = id(pump_1).state ? 1 : 0;
                     int p2 = (id(num_pumps) == 2) ? (id(pump_2).state ? 1 : 0) : -1;
-                    std::string json = "{\"h1\":" + std::to_string(h1) + ",\"h2\":" + std::to_string(h2) + ",\"p1\":" + std::to_string(p1) + ",\"p2\":" + std::to_string(p2) + ",\"bs\":" + std::to_string(id(brew_state)) + "}";
+
+                    char t_buf[24];
+                    if (std::isnan(id(kettle_temp).state)) snprintf(t_buf, sizeof(t_buf), "--.- °C");
+                    else snprintf(t_buf, sizeof(t_buf), "%.1f °C", id(kettle_temp).state);
+
+                    std::string tm_str;
+                    if (id(brew_state) == 7) {
+                      int rem = id(delay_start_sec);
+                      int hrs = rem / 3600;
+                      int mns = (rem % 3600) / 60;
+                      int scs = rem % 60;
+                      char d_buf[24];
+                      if (hrs > 0) snprintf(d_buf, sizeof(d_buf), "%02dh %02dm", hrs, mns);
+                      else snprintf(d_buf, sizeof(d_buf), "%02d:%02d", mns, scs);
+                      tm_str = d_buf;
+                    } else {
+                      char m_buf[24];
+                      snprintf(m_buf, sizeof(m_buf), "%02d:%02d", id(seconds_remaining) / 60, id(seconds_remaining) % 60);
+                      tm_str = m_buf;
+                    }
+
+                    int w_val = std::isnan(id(live_watts).state) ? 0 : (int)id(live_watts).state;
+                    float a_val = std::isnan(id(live_amps).state) ? 0.0f : id(live_amps).state;
+                    char pwr_buf[32];
+                    snprintf(pwr_buf, sizeof(pwr_buf), "%d W (%.1f A)", w_val, a_val);
+
+                    auto esc_json = [](const std::string &s) {
+                      std::string out;
+                      for (char c : s) {
+                        if (c == '"' || c == '\\') out += '\\';
+                        out += c;
+                      }
+                      return out;
+                    };
+
+                    std::string json = "{\"h1\":" + std::to_string(h1) +
+                      ",\"h2\":" + std::to_string(h2) +
+                      ",\"p1\":" + std::to_string(p1) +
+                      ",\"p2\":" + std::to_string(p2) +
+                      ",\"bs\":" + std::to_string(id(brew_state)) +
+                      ",\"temp\":\"" + std::string(t_buf) + "\"" +
+                      ",\"time\":\"" + tm_str + "\"" +
+                      ",\"pwr\":\"" + std::string(pwr_buf) + "\"" +
+                      ",\"stat\":\"" + esc_json(id(status_text)) + "\"" +
+                      ",\"rec\":\"" + esc_json(id(recipe_name)) + "\"}";
                     request->send(200, "application/json", json.c_str());
                     return;
                   }
@@ -207,6 +251,7 @@ script:
             web_server_base::global_web_server_base->add_handler(new BeerXMLUploadHandler());
           }
           #endif
+
 interval:
 
   - interval: 300ms
@@ -312,7 +357,7 @@ interval:
             std::string ip_str(ip_buf.data());
             set_lbl_diff(id(wifi_conn_info), "Connected: " + active_ssid + " (" + ip_str + ")");
             lv_obj_set_style_text_color(id(wifi_conn_info), lv_color_hex(0x34D399), 0);
-            set_lbl_diff(id(wifi_web_url), "http://" + ip_str + "/import");
+            set_lbl_diff(id(wifi_web_url), "http://" + ip_str + "/brewcontrol");
           } else {
             set_lbl_diff(id(lvgl_wifi_lbl), "WIFI: OFFLINE / AP");
             lv_obj_set_style_text_color(id(lvgl_wifi_lbl), lv_color_hex(0xF87171), 0);

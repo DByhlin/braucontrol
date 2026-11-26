@@ -12,6 +12,18 @@ esphome:
   on_boot:
     priority: -100
     then:
+      - script.execute: register_beerxml_uploader
+      - lambda: |-
+          id(import_handler_registered) = true;
+          id(bm_pid).set_kp(id(pid_kp));
+          id(bm_pid).set_ki(id(pid_ki));
+          id(bm_pid).set_kd(id(pid_kd));
+          lv_obj_t *tb = lv_tabview_get_tab_btns(id(recipe_tabs));
+          lv_obj_set_style_bg_color(tb, lv_color_hex(0x0F172A), LV_PART_MAIN);
+          lv_obj_set_style_text_color(tb, lv_color_hex(0x94A3B8), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(tb, lv_color_hex(0x1E293B), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+          lv_obj_set_style_text_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+          lv_obj_set_style_border_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
       - delay: 12s
       - if:
           condition:
@@ -23,18 +35,7 @@ esphome:
                 text: "Starting in offline mode..."
             - delay: 1s
             - lvgl.widget.hide: boot_screen
-      - script.execute: register_beerxml_uploader
-      - lambda: |-
-          id(bm_pid).set_kp(id(pid_kp));
-          id(bm_pid).set_ki(id(pid_ki));
-          id(bm_pid).set_kd(id(pid_kd));
-          lv_obj_t *tb = lv_tabview_get_tab_btns(id(recipe_tabs));
-          lv_obj_set_style_bg_color(tb, lv_color_hex(0x0F172A), LV_PART_MAIN);
-          lv_obj_set_style_text_color(tb, lv_color_hex(0x94A3B8), LV_PART_MAIN);
-          lv_obj_set_style_bg_color(tb, lv_color_hex(0x1E293B), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
-          lv_obj_set_style_text_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
-          lv_obj_set_style_border_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
-
+            - script.execute: register_beerxml_uploader
   min_version: "2026.1.0"
 
 esp32:
@@ -56,6 +57,8 @@ logger:
   hardware_uart: UART0
 
 api:
+  reboot_timeout: 0s
+
 ota:
   platform: esphome
 
@@ -78,6 +81,7 @@ web_server:
   
 wifi:
   id: my_wifi
+  reboot_timeout: 0s
   ap:
     ssid: "BM-BrewController"
     ap_timeout: 5s
@@ -699,7 +703,7 @@ text_sensor:
       if (id(my_wifi).is_connected()) {
         std::vector<char> ip_buf(network::IP_ADDRESS_BUFFER_SIZE, 0);
         id(my_wifi).get_ip_addresses().at(0).str_to(ip_buf.data());
-        return std::string("http://") + ip_buf.data() + "/import";
+        return std::string("http://") + ip_buf.data() + "/brewcontrol";
       }
       return std::string("http://192.168.4");
 

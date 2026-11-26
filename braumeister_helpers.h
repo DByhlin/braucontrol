@@ -65,25 +65,22 @@ static const char* BM_UPLOAD_HTML = R"HTML(<!DOCTYPE html>
   </div></div>
 </div>
 <script>
-async function sendCmd(c){ await fetch('/import?cmd='+c,{method:'POST'}); setTimeout(poll,200); }
+async function sendCmd(c){ await fetch('/brewcontrol?cmd='+c,{method:'POST'}); setTimeout(poll,200); }
 function updPill(id,l,s,cls){ const e=document.getElementById(id); if(s===-1){e.style.display='none';}else{e.style.display='block';if(s===1){e.className='btn '+cls;e.innerText=l+': ON';}else{e.className='btn btn-off';e.innerText=l+': OFF';}} }
 async function poll(){
   try{
-    const [t,tm,st,rc,pw,am,io]=await Promise.all([
-      fetch('/sensor/kettle_temp').then(r=>r.json()).catch(()=>null),
-      fetch('/text_sensor/step_timer').then(r=>r.json()).catch(()=>null),
-      fetch('/text_sensor/brew_status').then(r=>r.json()).catch(()=>null),
-      fetch('/text_sensor/active_recipe').then(r=>r.json()).catch(()=>null),
-      fetch('/sensor/live_power').then(r=>r.json()).catch(()=>null),
-      fetch('/sensor/current_draw').then(r=>r.json()).catch(()=>null),
-      fetch('/import?cmd=state',{method:'POST'}).then(r=>r.json()).catch(()=>null)
-    ]);
-    if(t&&t.state)document.getElementById('st_temp').innerText=t.state;
-    if(tm&&tm.value)document.getElementById('st_time').innerText=tm.value;
-    if(st&&st.value)document.getElementById('st_stat').innerText=st.value;
-    if(rc&&rc.value)document.getElementById('st_rec').innerText=rc.value;
-    if(pw&&pw.state&&am&&am.state)document.getElementById('st_pwr').innerText=pw.state+' ('+am.state+')';
-    if(io){updPill('b_h1','HTR 1',io.h1,'btn-htr-on');updPill('b_h2','HTR 2',io.h2,'btn-htr-on');updPill('b_p1','PUMP 1',io.p1,'btn-pmp-on');updPill('b_p2','PUMP 2',io.p2,'btn-pmp-on');document.getElementById('btn_conf').style.opacity=(io.bs===6)?'1.0':'0.55';}
+    const io = await fetch('/brewcontrol?cmd=state',{method:'POST'}).then(r=>r.json()).catch(()=>null);
+    if(!io) return;
+    if(io.temp) document.getElementById('st_temp').innerText=io.temp;
+    if(io.time) document.getElementById('st_time').innerText=io.time;
+    if(io.pwr)  document.getElementById('st_pwr').innerText=io.pwr;
+    if(io.stat) document.getElementById('st_stat').innerText=io.stat;
+    if(io.rec)  document.getElementById('st_rec').innerText=io.rec;
+    updPill('b_h1','HTR 1',io.h1,'btn-htr-on');
+    updPill('b_h2','HTR 2',io.h2,'btn-htr-on');
+    updPill('b_p1','PUMP 1',io.p1,'btn-pmp-on');
+    updPill('b_p2','PUMP 2',io.p2,'btn-pmp-on');
+    document.getElementById('btn_conf').style.opacity=(io.bs===6)?'1.0':'0.55';
   }catch(e){}
 }
 setInterval(poll,2000); poll();
@@ -107,7 +104,7 @@ async function sendXml(){
     let hPart=[];
     for(let i=0;i<8;i++){hPart.push(hops.at(i)?Math.round(parseFloat(hops.at(i).querySelector('TIME')?.textContent||'0')):0);}
     const packed='PACKED|'+rName+'|'+sCount+'|'+sPart.join('|')+'|'+bTime+',85|'+hops.length+'|'+hPart.join(',');
-    const res=await fetch('/import?value='+encodeURIComponent(packed),{method:'POST'});
+    const res=await fetch('/brewcontrol?value='+encodeURIComponent(packed),{method:'POST'});
     if(res.ok){msg.style.color='#34d399';msg.innerText='Loaded "'+rName+'" ('+sCount+' steps, '+hops.length+' hops).';poll();}
     else{msg.style.color='#f87171';msg.innerText='Upload failed: HTTP '+res.status;}
   }catch(err){msg.style.color='#f87171';msg.innerText='Error: '+err.message;}
