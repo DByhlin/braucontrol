@@ -13,7 +13,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - Circuit breaker adaptation; you can set your circuit braker amperage and the software will compensate for this. Mainly used for the BM50.
 
 
-# Hardware that you need:
+# Hardware that you need (total cost about 100USD):
 
 - Waveshare ESP32-S3 7" touchscreen with 800x480 resolution (https://docs.waveshare.com/ESP32-S3-Touch-LCD-7)
 - 1 or 2 40A SSRs with heatsink (for the heating elements)
