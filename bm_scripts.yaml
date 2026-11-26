@@ -165,9 +165,15 @@ script:
           id(alarm_buzzer).turn_off();
 
   - id: register_beerxml_uploader
+    mode: single
     then:
       - lambda: |-
           #ifdef USE_WEBSERVER
+          if (id(import_handler_registered)) return;
+          if (web_server_base::global_web_server_base == nullptr) {
+            ESP_LOGW("braucontrol", "Web server base is null, waiting...");
+            return;
+          }
           class BeerXMLUploadHandler : public AsyncWebHandler {
            public:
             bool canHandle(AsyncWebServerRequest *request) const override {
@@ -247,9 +253,9 @@ script:
               request->send(200, "text/html", BM_UPLOAD_HTML);
             }
           };
-          if (web_server_base::global_web_server_base != nullptr) {
-            web_server_base::global_web_server_base->add_handler(new BeerXMLUploadHandler());
-          }
+          web_server_base::global_web_server_base->add_handler(new BeerXMLUploadHandler());
+          id(import_handler_registered) = true;
+          ESP_LOGI("braucontrol", "Registered /brewcontrol web handler successfully!");
           #endif
 
 interval:
@@ -272,28 +278,11 @@ interval:
   - interval: 1s
     then:
       - lambda: |-
-          auto set_lbl_diff = [](lv_obj_t *lbl, const std::string &txt) {
-            if (strcmp(lv_label_get_text(lbl), txt.c_str()) != 0) {
-              lv_label_set_text(lbl, txt.c_str());
-            }
-          };
-
-          auto set_bg_diff = [](lv_obj_t *obj, lv_color_t target, int selector = 0) {
-            lv_color_t cur = lv_obj_get_style_bg_color(obj, LV_PART_MAIN);
-            if (cur.red != target.red || cur.green != target.green || cur.blue != target.blue) {
-               lv_obj_set_style_bg_color(obj, target, selector);
-             }
-          };
-           auto set_hid_diff = [](lv_obj_t *obj, bool hide) {
-             if (lv_obj_is_hidden(obj) != hide) {
-               lv_obj_set_hidden(obj, hide);
-             }
-           };
-
-
+          // =========================================================
+          // SECTION 1: WEB HANDLER & REMOTE WEB COMMANDS
+          // =========================================================
           #ifdef USE_WEBSERVER
           if (!id(import_handler_registered) && web_server_base::global_web_server_base != nullptr) {
-            id(import_handler_registered) = true;
             id(register_beerxml_uploader).execute();
             id(sync_recipe_sliders).execute();
           }
@@ -316,203 +305,48 @@ interval:
             } else if (cmd == "delay_clr") {
               id(delay_start_min) = 0;
               if (id(brew_state) == 7) id(cmd_stop_all).execute();
-            }
-            else if (cmd == "htr1" || (cmd == "htr2" && id(num_elements) == 2)) {
-              if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); id(manual_htr_1) = false; id(manual_htr_2) = false; }
-              if (cmd == "htr1") { id(manual_htr_1) = !id(manual_htr_1); if (id(manual_htr_1) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_2) = false; }
-              else { id(manual_htr_2) = !id(manual_htr_2); if (id(manual_htr_2) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_1) = false; }
+            } else if (cmd == "htr1" || (cmd == "htr2" && id(num_elements) == 2)) {
+              if (id(brew_state) != 0) {
+                id(brew_state) = 0;
+                auto c = id(bm_pid).make_call();
+                c.set_mode("OFF");
+                c.perform();
+                id(manual_htr_1) = false;
+                id(manual_htr_2) = false;
+              }
+              if (cmd == "htr1") {
+                id(manual_htr_1) = !id(manual_htr_1);
+                if (id(manual_htr_1) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_2) = false;
+              } else {
+                id(manual_htr_2) = !id(manual_htr_2);
+                if (id(manual_htr_2) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_1) = false;
+              }
               id(heater_1_pwm).set_level(id(manual_htr_1) ? 1.0f : 0.0f);
               id(heater_2_pwm).set_level((id(num_elements) == 2 && id(manual_htr_2)) ? 1.0f : 0.0f);
               id(status_text) = "MANUAL OVERRIDE (WEB)";
             } else if (cmd == "pump1") {
-              if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
-              id(pump_1).toggle();
-              id(status_text) = "MANUAL OVERRIDE (WEB)";
               if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
-              id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
-              return;
+                id(pump_1).turn_off();
+                id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+              } else {
+                if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
+                id(pump_1).toggle();
+                id(status_text) = "MANUAL OVERRIDE (WEB)";
               }
             } else if (cmd == "pump2" && id(num_pumps) == 2) {
-              if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
-              id(pump_2).toggle();
-              id(status_text) = "MANUAL OVERRIDE (WEB)";
               if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
-              id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
-              return;
+                id(pump_2).turn_off();
+                id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+              } else {
+                if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
+                id(pump_2).toggle();
+                id(status_text) = "MANUAL OVERRIDE (WEB)";
               }
             }
           }
-          // 1. Wi-Fi Status Badges
-          if (id(my_wifi).is_connected()) {
-            wifi_ap_record_t ap_info{};
-            std::string active_ssid = (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) ? std::string(reinterpret_cast<const char*>(ap_info.ssid)) : "Online";
-            std::string badge_txt = "WIFI: " + active_ssid;
-            set_lbl_diff(id(lvgl_wifi_lbl), badge_txt);
-            lv_obj_set_style_text_color(id(lvgl_wifi_lbl), lv_color_hex(0x34D399), 0);
-            set_lbl_diff(id(home_wifi_lbl), badge_txt);
-            lv_obj_set_style_text_color(id(home_wifi_lbl), lv_color_hex(0x34D399), 0);
-
-            std::vector<char> ip_buf(network::IP_ADDRESS_BUFFER_SIZE, 0);
-            id(my_wifi).get_ip_addresses().at(0).str_to(ip_buf.data());
-            std::string ip_str(ip_buf.data());
-            set_lbl_diff(id(wifi_conn_info), "Connected: " + active_ssid + " (" + ip_str + ")");
-            lv_obj_set_style_text_color(id(wifi_conn_info), lv_color_hex(0x34D399), 0);
-            set_lbl_diff(id(wifi_web_url), "http://" + ip_str + "/brewcontrol");
-          } else {
-            set_lbl_diff(id(lvgl_wifi_lbl), "WIFI: OFFLINE / AP");
-            lv_obj_set_style_text_color(id(lvgl_wifi_lbl), lv_color_hex(0xF87171), 0);
-            set_lbl_diff(id(home_wifi_lbl), "WIFI: OFFLINE / AP");
-            lv_obj_set_style_text_color(id(home_wifi_lbl), lv_color_hex(0xF87171), 0);
-            set_lbl_diff(id(wifi_conn_info), "Not connected (Hotspot: BM-BrewController)");
-            lv_obj_set_style_text_color(id(wifi_conn_info), lv_color_hex(0xF59E0B), 0);
-            set_lbl_diff(id(wifi_web_url), "http://192.168.4");
-          }
-
-          // 2. Sync 8-Step & 8-Hop Recipe Builder UI
-          auto active_t = BM_TEMPS; auto active_m = BM_TIMES; auto active_h = BM_HOPS;
-          std::vector<lv_obj_t*> m_lbls = {id(lbl_m1), id(lbl_m2), id(lbl_m3), id(lbl_m4), id(lbl_m5), id(lbl_m6), id(lbl_m7), id(lbl_m8)};
-          std::vector<lv_obj_t*> m_btns = {id(btn_sel_m1), id(btn_sel_m2), id(btn_sel_m3), id(btn_sel_m4), id(btn_sel_m5), id(btn_sel_m6), id(btn_sel_m7), id(btn_sel_m8)};
-          std::vector<lv_obj_t*> h_lbls = {id(lbl_h1), id(lbl_h2), id(lbl_h3), id(lbl_h4), id(lbl_h5), id(lbl_h6), id(lbl_h7), id(lbl_h8)};
-          std::vector<lv_obj_t*> h_btns = {id(btn_sel_h1), id(btn_sel_h2), id(btn_sel_h3), id(btn_sel_h4), id(btn_sel_h5), id(btn_sel_h6), id(btn_sel_h7), id(btn_sel_h8)};
-
-          for (int i = 0; i < 8; i++) {
-            set_lbl_diff(m_lbls.at(i), "Step " + std::to_string(i + 1) + ": " + std::to_string((int)*active_t.at(i)) + "C • " + std::to_string(*active_m.at(i)) + "m");
-            set_hid_diff(m_btns.at(i), id(active_mash_steps) < (i + 1));
-            set_bg_diff(m_btns.at(i), lv_color_hex(id(editing_mash_step) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
-
-            set_lbl_diff(h_lbls.at(i), "Hop " + std::to_string(i + 1) + ": " + std::to_string(*active_h.at(i)) + " min");
-            set_hid_diff(h_btns.at(i), id(active_hop_count) < (i + 1));
-            set_bg_diff(h_btns.at(i), lv_color_hex(id(editing_hop_idx) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
-          }
-
-          int es = id(editing_mash_step);
-          if (es >= 1 && es <= 8) {
-            set_lbl_diff(id(lbl_edit_step_title), "EDITING STEP " + std::to_string(es));
-            set_lbl_diff(id(lbl_edit_step_temp), std::to_string((int)*active_t.at(es - 1)) + " °C");
-            set_lbl_diff(id(lbl_edit_step_time), std::to_string(*active_m.at(es - 1)) + "m");
-          }
-          int eh = id(editing_hop_idx);
-          if (eh >= 1 && eh <= 8) {
-            set_lbl_diff(id(lbl_edit_hop_title), "HOP " + std::to_string(eh) + " ADDITION TIME");
-            set_lbl_diff(id(lbl_edit_hop_time), std::to_string(*active_h.at(eh - 1)) + "m");
-          }
-          set_lbl_diff(id(lbl_boil_time_val), "Boil: " + std::to_string(id(boil_time_min)) + " min");
-          set_lbl_diff(id(lbl_boil_pwr_val), "Power: " + std::to_string(id(boil_power_pct)) + "%");
-          set_lbl_diff(id(lbl_slot_1), id(slot1_name));
-          set_lbl_diff(id(lbl_slot_2), id(slot2_name));
-          set_lbl_diff(id(lbl_slot_3), id(slot3_name));
-          set_lbl_diff(id(lbl_slot_4), id(slot4_name));
-          set_lbl_diff(id(lbl_slot_selected), "Selected: Slot " + std::to_string(id(selected_slot)));
-          set_bg_diff(id(btn_slot_1), lv_color_hex(id(selected_slot) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_slot_2), lv_color_hex(id(selected_slot) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_slot_3), lv_color_hex(id(selected_slot) == 3 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_slot_4), lv_color_hex(id(selected_slot) == 4 ? 0x1D4ED8 : 0x1E293B), 0);
-
-          // 3. Heater & Pump Status Pills (Dynamic Layout - Hides N/A Buttons)
-          int heat_pct = (int)(id(current_heat_level) * 100.0f);
-          bool h1_on = (id(brew_state) == 0) ? id(manual_htr_1) : (heat_pct > 0);
-          bool h2_on = (id(num_elements) == 2) && ((id(brew_state) == 0) ? id(manual_htr_2) : (heat_pct > 0));
-
-          int visible_cnt = 2 + (id(num_elements) == 2 ? 1 : 0) + (id(num_pumps) == 2 ? 1 : 0);
-          int gap = 14;
-          int btn_w = (760 - (visible_cnt - 1) * gap) / visible_cnt;
-          int cur_x = 20;
-
-          // Heater 1 (Always visible)
-          lv_obj_set_pos(id(pill_htr1), cur_x, 274);
-          lv_obj_set_width(id(pill_htr1), btn_w);
-          cur_x += btn_w + gap;
-          set_bg_diff(id(pill_htr1), lv_color_hex(h1_on ? 0xDC2626 : 0x1E293B), 0);
-          set_lbl_diff(id(lbl_pill_htr1), h1_on ? ((id(brew_state) == 0) ? "HTR 1: MAN ON" : ("HTR 1: " + std::to_string(heat_pct) + "%")) : "HTR 1: OFF");
-
-          // Heater 2 (Hidden when 1 element)
-          if (id(num_elements) == 1) {
-            set_hid_diff(id(pill_htr2), true);
-          } else {
-            set_hid_diff(id(pill_htr2), false);
-            lv_obj_set_pos(id(pill_htr2), cur_x, 274);
-            lv_obj_set_width(id(pill_htr2), btn_w);
-            cur_x += btn_w + gap;
-            set_bg_diff(id(pill_htr2), lv_color_hex(h2_on ? 0xDC2626 : 0x1E293B), 0);
-            set_lbl_diff(id(lbl_pill_htr2), h2_on ? ((id(brew_state) == 0) ? "HTR 2: MAN ON" : ("HTR 2: " + std::to_string(heat_pct) + "%")) : "HTR 2: OFF");
-          }
-
-          // Pump 1 (Always visible)
-          lv_obj_set_pos(id(pill_pump1), cur_x, 274);
-          lv_obj_set_width(id(pill_pump1), btn_w);
-          cur_x += btn_w + gap;
-          set_bg_diff(id(pill_pump1), lv_color_hex(id(pump_1).state ? 0x2563EB : 0x1E293B), 0);
-          set_lbl_diff(id(lbl_pill_pump1), id(pump_1).state ? "PUMP 1: ON" : "PUMP 1: OFF");
-
-          // Pump 2 (Hidden when 1 pump)
-          if (id(num_pumps) == 1) {
-            set_hid_diff(id(pill_pump2), true);
-          } else {
-            set_hid_diff(id(pill_pump2), false);
-            lv_obj_set_pos(id(pill_pump2), cur_x, 274);
-            lv_obj_set_width(id(pill_pump2), btn_w);
-            set_bg_diff(id(pill_pump2), lv_color_hex(id(pump_2).state ? 0x2563EB : 0x1E293B), 0);
-            set_lbl_diff(id(lbl_pill_pump2), id(pump_2).state ? "PUMP 2: ON" : "PUMP 2: OFF");
-          }
-
-          // 4. Kettle Arc Gauge, Target Temp & Step Timer
-          if (!std::isnan(id(kettle_temp).state)) {
-            int t_val = std::max(20, std::min(100, (int)id(kettle_temp).state));
-            lv_arc_set_value(id(arc_kettle_temp), t_val);
-            int t10 = (int)(id(kettle_temp).state * 10.0f);
-            set_lbl_diff(id(lbl_kettle_temp), std::to_string(t10 / 10) + "." + std::to_string(abs(t10 % 10)) + " C");
-          } else {
-            set_lbl_diff(id(lbl_kettle_temp), "--.- C");
-          }
-
-          if (!std::isnan(id(secondary_temp).state)) {
-            int s10 = (int)(id(secondary_temp).state * 10.0f);
-            set_lbl_diff(id(lbl_sec_temp), "Aux: " + std::to_string(s10 / 10) + "." + std::to_string(abs(s10 % 10)) + " C");
-          } else {
-            set_lbl_diff(id(lbl_sec_temp), "Aux: --.- C");
-          }
-
-          int cs_disp = (id(current_step) >= 1 && id(current_step) <= 8) ? id(current_step) : 1;
-          float display_target = *active_t.at(cs_disp - 1);
-          if (id(brew_state) == 1) set_lbl_diff(id(lbl_step_badge), "Mashing: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps)));
-          else if (id(brew_state) == 6) set_lbl_diff(id(lbl_step_badge), "Done: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps)));
-          else if (id(brew_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Boil @ " + std::to_string(id(boil_power_pct)) + "% Power"); }
-          else if (id(brew_state) == 5) { display_target = 65.0f; set_lbl_diff(id(lbl_step_badge), "PID Auto-Tune"); }
-          else { display_target = id(mash_temp_1); set_lbl_diff(id(lbl_step_badge), "Ready: Step 1 of " + std::to_string(id(active_mash_steps))); }
-
-          int tgt10 = (int)(display_target * 10.0f);
-          set_lbl_diff(id(lbl_target_temp), std::to_string(tgt10 / 10) + "." + std::to_string(abs(tgt10 % 10)) + " C");
-
-          bool show_delay_btns = (id(brew_state) == 0);
-          set_hid_diff(id(btn_delay_minus), !show_delay_btns);
-          set_hid_diff(id(btn_delay_plus), !show_delay_btns);
-
-          if (id(brew_state) == 7) {
-            set_lbl_diff(id(lbl_step_badge), "Starts in (Tap STOP to cancel)");
-            int rem = id(delay_start_sec);
-            if (rem >= 3600) {
-              int hrs = rem / 3600;
-              int mns = (rem % 3600) / 60;
-              set_lbl_diff(id(lbl_timer), (hrs < 10 ? "0" : "") + std::to_string(hrs) + "h " + (mns < 10 ? "0" : "") + std::to_string(mns) + "m");
-            } else {
-              int mins = rem / 60;
-              int secs = rem % 60;
-              set_lbl_diff(id(lbl_timer), (mins < 10 ? "0" : "") + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs));
-            }
-          } else if (id(brew_state) == 0 && id(delay_start_min) > 0) {
-            int hrs = id(delay_start_min) / 60;
-            int mns = id(delay_start_min) % 60;
-            set_lbl_diff(id(lbl_timer), "+" + std::to_string(hrs) + "h " + (mns < 10 ? "0" : "") + std::to_string(mns) + "m");
-            set_lbl_diff(id(lbl_step_badge), "Delay Set -> Tap START");
-          } else {
-            int mins = id(seconds_remaining) / 60;
-            int secs = id(seconds_remaining) % 60;
-            set_lbl_diff(id(lbl_timer), (mins < 10 ? "0" : "") + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs));
-          }
-
-          // 5. 8-Step Mash & Boil State Machine
-
-                    // SAFETY INTERLOCK 1: 88C Pump Thermal Cutoff (Protects Braumeister pumps)
+          // =========================================================
+          // SECTION 2: SAFETY INTERLOCKS, BUZZER & BREW STATE MACHINE
+          // =========================================================
           if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
             if (id(pump_1).state || id(pump_2).state) {
               id(pump_1).turn_off();
@@ -521,7 +355,6 @@ interval:
             }
           }
 
-          // SAFETY INTERLOCK 2: Missing Probe or Over-Temp (> 105C) Emergency Shutoff
           if (id(brew_state) == 1 || id(brew_state) == 3 || id(brew_state) == 5 || id(brew_state) == 6) {
             if (std::isnan(id(kettle_temp).state)) {
               id(cmd_stop_all).execute();
@@ -535,7 +368,6 @@ interval:
             }
           }
 
-          // AUDIBLE BUZZER PULSE: Beeps every 2s when waiting for Step Confirm or Hop Alert
           bool need_beep = (id(brew_state) == 6) || (id(status_text).find("ADD HOP") != std::string::npos) || (id(status_text).find("SAFETY") != std::string::npos);
           if (need_beep && (millis() / 1000) % 2 == 0) {
             id(alarm_buzzer).turn_on();
@@ -543,18 +375,22 @@ interval:
             id(alarm_buzzer).turn_off();
           }
 
+          auto active_t = BM_TEMPS;
+          auto active_m = BM_TIMES;
+          auto active_h = BM_HOPS;
+
           if (id(brew_state) == 1) {
             int cs = id(current_step);
-             if (cs > id(active_mash_steps) || cs > 8 || *active_m.at(cs - 1) <= 0) {
-               id(brew_state) = 2;
-               id(pump_1).turn_off();
-               id(pump_2).turn_off();
-               id(status_text) = "LIFT MALT PIPE -> PRESS BOIL";
-               return;
-             }
+            if (cs > id(active_mash_steps) || cs > 8 || *active_m.at(cs - 1) <= 0) {
+              id(brew_state) = 2;
+              id(pump_1).turn_off();
+              id(pump_2).turn_off();
+              id(status_text) = "LIFT MALT PIPE -> PRESS BOIL";
+              return;
+            }
             float target_t = *active_t.at(cs - 1);
-             if (id(bm_pid).mode != climate::CLIMATE_MODE_HEAT || std::abs(id(bm_pid).target_temperature - target_t) > 0.1f) {
-               auto call = id(bm_pid).make_call();
+            if (id(bm_pid).mode != climate::CLIMATE_MODE_HEAT || std::abs(id(bm_pid).target_temperature - target_t) > 0.1f) {
+              auto call = id(bm_pid).make_call();
               call.set_target_temperature(target_t);
               call.set_mode("HEAT");
               call.perform();
@@ -580,13 +416,13 @@ interval:
               } else {
                 id(brew_state) = 6;
                 id(status_text) = "STEP " + std::to_string(cs) + " DONE - TAP CONTINUE";
-                set_lbl_diff(id(lbl_modal_title), "STEP " + std::to_string(cs) + " COMPLETE!");
+                lv_label_set_text(id(lbl_modal_title), ("STEP " + std::to_string(cs) + " COMPLETE!").c_str());
                 if (cs < id(active_mash_steps) && cs < 8 && *active_m.at(cs) > 0) {
-                  set_lbl_diff(id(lbl_modal_body), "Next: Step " + std::to_string(cs + 1) + " (" + std::to_string((int)*active_t.at(cs)) + "C for " + std::to_string(*active_m.at(cs)) + "m)");
+                  lv_label_set_text(id(lbl_modal_body), ("Next: Step " + std::to_string(cs + 1) + " (" + std::to_string((int)*active_t.at(cs)) + "C for " + std::to_string(*active_m.at(cs)) + "m)").c_str());
                 } else {
-                  set_lbl_diff(id(lbl_modal_body), "All mash steps finished! Tap CONTINUE to finish mash.");
+                  lv_label_set_text(id(lbl_modal_body), "All mash steps finished! Tap CONTINUE to finish mash.");
                 }
-                set_hid_diff(id(step_confirm_modal), false);
+                lv_obj_set_hidden(id(step_confirm_modal), false);
               }
             }
           } else if (id(brew_state) == 3) {
@@ -615,39 +451,7 @@ interval:
             } else {
               id(cmd_start_brew).execute();
             }
-          }
-          std::string model_lbl = "CUSTOM";
-          if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) model_lbl = "BM10";
-          else if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) model_lbl = "BM20";
-          else if (id(num_elements) == 2 && id(element_watts) == 3200) model_lbl = "BM50";
-
-          std::string amp_txt = (id(max_amps) > 0) ? (std::to_string(id(max_amps)) + "A") : "MAX";
-          id(hw_status_text) = model_lbl + " | " + std::to_string(id(element_watts)) + "W | " + std::to_string(id(num_elements)) + " EL | " + std::to_string(id(num_pumps)) + " PMP | " + amp_txt;
-
-          int cur_w = std::isnan(id(live_watts).state) ? 0 : (int)id(live_watts).state;
-          int a10 = std::isnan(id(live_amps).state) ? 0 : (int)(id(live_amps).state * 10.0f);
-          std::string pwr_badge = std::to_string(cur_w) + "W (" + std::to_string(a10 / 10) + "." + std::to_string(abs(a10 % 10)) + "A / " + amp_txt + ")";
-
-          set_bg_diff(id(btn_mod_bm10), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_mod_bm20), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_mod_bm50), lv_color_hex((id(num_elements) == 2 && id(element_watts) == 3200) ? 0x1D4ED8 : 0x1E293B), 0);
-
-          set_bg_diff(id(btn_el_1), lv_color_hex(id(num_elements) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_el_2), lv_color_hex(id(num_elements) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-
-          set_bg_diff(id(btn_pmp_1), lv_color_hex(id(num_pumps) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_pmp_2), lv_color_hex(id(num_pumps) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-
-          set_bg_diff(id(btn_amp_10), lv_color_hex(id(max_amps) == 10 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_amp_13), lv_color_hex(id(max_amps) == 13 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_amp_16), lv_color_hex(id(max_amps) == 16 ? 0x1D4ED8 : 0x1E293B), 0);
-          set_bg_diff(id(btn_amp_0),  lv_color_hex(id(max_amps) == 0  ? 0x1D4ED8 : 0x1E293B), 0);
-
-          char pid_buf[80];
-          snprintf(pid_buf, sizeof(pid_buf), "%s  |  PID: P=%.3f I=%.4f D=%.2f", id(hw_status_text).c_str(), id(bm_pid).get_kp(), id(bm_pid).get_ki(), id(bm_pid).get_kd());
-          set_lbl_diff(id(hw_page_status), std::string(pid_buf));
-
-          if (id(brew_state) == 5) {
+          } else if (id(brew_state) == 5) {
             bool gains_updated = (std::abs(id(bm_pid).get_kp() - id(pid_kp)) > 0.0001f) ||
                                  (std::abs(id(bm_pid).get_ki() - id(pid_ki)) > 0.00001f) ||
                                  (std::abs(id(bm_pid).get_kd() - id(pid_kd)) > 0.001f);
@@ -659,10 +463,251 @@ interval:
               auto call = id(bm_pid).make_call();
               call.set_mode("OFF");
               call.perform();
-              set_bg_diff(id(autotune_banner), lv_color_hex(0x059669), 0);
-              set_lbl_diff(id(lbl_autotune_banner), "AUTOTUNE COMPLETE & SAVED TO FLASH!");
             } else {
               id(autotune_elapsed_sec)++;
+              int at_m = id(autotune_elapsed_sec) / 60;
+              int at_s = id(autotune_elapsed_sec) % 60;
+              std::string at_time = (at_m < 10 ? "0" : "") + std::to_string(at_m) + ":" + (at_s < 10 ? "0" : "") + std::to_string(at_s);
+              int heat_pct_at = (int)(id(current_heat_level) * 100.0f);
+              id(status_text) = "PID AUTOTUNE (" + at_time + ") - " + std::to_string(heat_pct_at) + "% PWR";
+            }
+          }
+
+          std::string model_lbl = "CUSTOM";
+          if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) model_lbl = "BM10";
+          else if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) model_lbl = "BM20";
+          else if (id(num_elements) == 2 && id(element_watts) == 3200) model_lbl = "BM50";
+          std::string amp_txt = (id(max_amps) > 0) ? (std::to_string(id(max_amps)) + "A") : "MAX";
+          id(hw_status_text) = model_lbl + " | " + std::to_string(id(element_watts)) + "W | " + std::to_string(id(num_elements)) + " EL | " + std::to_string(id(num_pumps)) + " PMP | " + amp_txt;
+          // =========================================================
+          // SECTION 3: ACTIVE SCREEN UI — HOME & BREW PAGES
+          // =========================================================
+          lv_obj_t *act_scr = lv_scr_act();
+
+          auto set_lbl_diff = [](lv_obj_t *lbl, const std::string &txt) {
+            if (strcmp(lv_label_get_text(lbl), txt.c_str()) != 0) {
+              lv_label_set_text(lbl, txt.c_str());
+            }
+          };
+
+          auto set_bg_diff = [](lv_obj_t *obj, lv_color_t target, int selector = 0) {
+            lv_color_t cur = lv_obj_get_style_bg_color(obj, LV_PART_MAIN);
+            if (cur.red != target.red || cur.green != target.green || cur.blue != target.blue) {
+              lv_obj_set_style_bg_color(obj, target, selector);
+            }
+          };
+
+          auto set_hid_diff = [](lv_obj_t *obj, bool hide) {
+            if (lv_obj_is_hidden(obj) != hide) {
+              lv_obj_set_hidden(obj, hide);
+            }
+          };
+
+          if (act_scr == id(home_page)->obj) {
+            if (id(my_wifi).is_connected() && !id(my_wifi).get_ip_addresses().empty()) {
+              wifi_ap_record_t ap_info{};
+              std::string active_ssid = (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) ? bm_safe_ssid(ap_info.ssid) : "Online";
+              set_lbl_diff(id(home_wifi_lbl), "WIFI: " + active_ssid);
+              lv_obj_set_style_text_color(id(home_wifi_lbl), lv_color_hex(0x34D399), 0);
+            } else {
+              set_lbl_diff(id(home_wifi_lbl), "WIFI: OFFLINE / AP");
+              lv_obj_set_style_text_color(id(home_wifi_lbl), lv_color_hex(0xF87171), 0);
+            }
+
+            set_lbl_diff(id(home_hw_badge), id(hw_status_text));
+
+            std::string home_t = "--.-";
+            if (!std::isnan(id(kettle_temp).state)) {
+              int ht10 = (int)(id(kettle_temp).state * 10.0f);
+              home_t = std::to_string(ht10 / 10) + "." + std::to_string(abs(ht10 % 10));
+            }
+            std::string state_short = (id(brew_state) == 0) ? "IDLE" : (id(brew_state) == 1) ? "MASHING" : (id(brew_state) == 3) ? "BOILING" : (id(brew_state) == 5) ? "TUNING" : (id(brew_state) == 7) ? "DELAYED" : "PAUSED";
+            set_lbl_diff(id(home_status_badge), state_short + " • " + home_t + " °C");
+          }
+
+          else if (act_scr == id(brew_page)->obj) {
+            if (id(my_wifi).is_connected() && !id(my_wifi).get_ip_addresses().empty()) {
+              wifi_ap_record_t ap_info{};
+              std::string active_ssid = (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) ? bm_safe_ssid(ap_info.ssid) : "Online";
+              set_lbl_diff(id(lvgl_wifi_lbl), "WIFI: " + active_ssid);
+              lv_obj_set_style_text_color(id(lvgl_wifi_lbl), lv_color_hex(0x34D399), 0);
+            } else {
+              set_lbl_diff(id(lvgl_wifi_lbl), "WIFI: OFFLINE / AP");
+              lv_obj_set_style_text_color(id(lvgl_wifi_lbl), lv_color_hex(0xF87171), 0);
+            }
+
+            int cur_w = std::isnan(id(live_watts).state) ? 0 : (int)id(live_watts).state;
+            int a10 = std::isnan(id(live_amps).state) ? 0 : (int)(id(live_amps).state * 10.0f);
+            set_lbl_diff(id(lvgl_hw_badge), std::to_string(cur_w) + "W (" + std::to_string(a10 / 10) + "." + std::to_string(abs(a10 % 10)) + "A / " + amp_txt + ")");
+            set_lbl_diff(id(lvgl_status_lbl), id(status_text));
+            set_lbl_diff(id(lbl_brew_recipe), "Recipe: " + id(recipe_name));
+
+            int heat_pct = (int)(id(current_heat_level) * 100.0f);
+            bool h1_on = (id(brew_state) == 0) ? id(manual_htr_1) : (heat_pct > 0);
+            bool h2_on = (id(num_elements) == 2) && ((id(brew_state) == 0) ? id(manual_htr_2) : (heat_pct > 0));
+
+            int visible_cnt = 2 + (id(num_elements) == 2 ? 1 : 0) + (id(num_pumps) == 2 ? 1 : 0);
+            int gap = 14;
+            int btn_w = (760 - (visible_cnt - 1) * gap) / visible_cnt;
+            int cur_x = 20;
+
+            lv_obj_set_pos(id(pill_htr1), cur_x, 274);
+            lv_obj_set_width(id(pill_htr1), btn_w);
+            cur_x += btn_w + gap;
+            set_bg_diff(id(pill_htr1), lv_color_hex(h1_on ? 0xDC2626 : 0x1E293B), 0);
+            set_lbl_diff(id(lbl_pill_htr1), h1_on ? ((id(brew_state) == 0) ? "HTR 1: MAN ON" : ("HTR 1: " + std::to_string(heat_pct) + "%")) : "HTR 1: OFF");
+
+            if (id(num_elements) == 1) {
+              set_hid_diff(id(pill_htr2), true);
+            } else {
+              set_hid_diff(id(pill_htr2), false);
+              lv_obj_set_pos(id(pill_htr2), cur_x, 274);
+              lv_obj_set_width(id(pill_htr2), btn_w);
+              cur_x += btn_w + gap;
+              set_bg_diff(id(pill_htr2), lv_color_hex(h2_on ? 0xDC2626 : 0x1E293B), 0);
+              set_lbl_diff(id(lbl_pill_htr2), h2_on ? ((id(brew_state) == 0) ? "HTR 2: MAN ON" : ("HTR 2: " + std::to_string(heat_pct) + "%")) : "HTR 2: OFF");
+            }
+
+            lv_obj_set_pos(id(pill_pump1), cur_x, 274);
+            lv_obj_set_width(id(pill_pump1), btn_w);
+            cur_x += btn_w + gap;
+            set_bg_diff(id(pill_pump1), lv_color_hex(id(pump_1).state ? 0x2563EB : 0x1E293B), 0);
+            set_lbl_diff(id(lbl_pill_pump1), id(pump_1).state ? "PUMP 1: ON" : "PUMP 1: OFF");
+
+            if (id(num_pumps) == 1) {
+              set_hid_diff(id(pill_pump2), true);
+            } else {
+              set_hid_diff(id(pill_pump2), false);
+              lv_obj_set_pos(id(pill_pump2), cur_x, 274);
+              lv_obj_set_width(id(pill_pump2), btn_w);
+              set_bg_diff(id(pill_pump2), lv_color_hex(id(pump_2).state ? 0x2563EB : 0x1E293B), 0);
+              set_lbl_diff(id(lbl_pill_pump2), id(pump_2).state ? "PUMP 2: ON" : "PUMP 2: OFF");
+            }
+
+            if (!std::isnan(id(kettle_temp).state)) {
+              int t_val = std::max(20, std::min(100, (int)id(kettle_temp).state));
+              lv_arc_set_value(id(arc_kettle_temp), t_val);
+              int t10 = (int)(id(kettle_temp).state * 10.0f);
+              set_lbl_diff(id(lbl_kettle_temp), std::to_string(t10 / 10) + "." + std::to_string(abs(t10 % 10)) + " C");
+            } else {
+              set_lbl_diff(id(lbl_kettle_temp), "--.- C");
+            }
+
+            if (!std::isnan(id(secondary_temp).state)) {
+              int s10 = (int)(id(secondary_temp).state * 10.0f);
+              set_lbl_diff(id(lbl_sec_temp), "Aux: " + std::to_string(s10 / 10) + "." + std::to_string(abs(s10 % 10)) + " C");
+            } else {
+              set_lbl_diff(id(lbl_sec_temp), "Aux: --.- C");
+            }
+
+            int cs_disp = (id(current_step) >= 1 && id(current_step) <= 8) ? id(current_step) : 1;
+            float display_target = *active_t.at(cs_disp - 1);
+            if (id(brew_state) == 1) set_lbl_diff(id(lbl_step_badge), "Mashing: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps)));
+            else if (id(brew_state) == 6) set_lbl_diff(id(lbl_step_badge), "Done: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps)));
+            else if (id(brew_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Boil @ " + std::to_string(id(boil_power_pct)) + "% Power"); }
+            else if (id(brew_state) == 5) { display_target = 65.0f; set_lbl_diff(id(lbl_step_badge), "PID Auto-Tune"); }
+            else { display_target = id(mash_temp_1); set_lbl_diff(id(lbl_step_badge), "Ready: Step 1 of " + std::to_string(id(active_mash_steps))); }
+
+            int tgt10 = (int)(display_target * 10.0f);
+            set_lbl_diff(id(lbl_target_temp), std::to_string(tgt10 / 10) + "." + std::to_string(abs(tgt10 % 10)) + " C");
+
+            bool show_delay_btns = (id(brew_state) == 0);
+            set_hid_diff(id(btn_delay_minus), !show_delay_btns);
+            set_hid_diff(id(btn_delay_plus), !show_delay_btns);
+
+            if (id(brew_state) == 7) {
+              set_lbl_diff(id(lbl_step_badge), "Starts in (Tap STOP to cancel)");
+              int rem = id(delay_start_sec);
+              if (rem >= 3600) {
+                int hrs = rem / 3600;
+                int mns = (rem % 3600) / 60;
+                set_lbl_diff(id(lbl_timer), (hrs < 10 ? "0" : "") + std::to_string(hrs) + "h " + (mns < 10 ? "0" : "") + std::to_string(mns) + "m");
+              } else {
+                int mins = rem / 60;
+                int secs = rem % 60;
+                set_lbl_diff(id(lbl_timer), (mins < 10 ? "0" : "") + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs));
+              }
+            } else if (id(brew_state) == 0 && id(delay_start_min) > 0) {
+              int hrs = id(delay_start_min) / 60;
+              int mns = id(delay_start_min) % 60;
+              set_lbl_diff(id(lbl_timer), "+" + std::to_string(hrs) + "h " + (mns < 10 ? "0" : "") + std::to_string(mns) + "m");
+              set_lbl_diff(id(lbl_step_badge), "Delay Set -> Tap START");
+            } else {
+              int mins = id(seconds_remaining) / 60;
+              int secs = id(seconds_remaining) % 60;
+              set_lbl_diff(id(lbl_timer), (mins < 10 ? "0" : "") + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs));
+            }
+          }
+          // =========================================================
+          // SECTION 4: ACTIVE SCREEN UI — RECIPE, HARDWARE & WIFI PAGES
+          // =========================================================
+          else if (act_scr == id(recipe_page)->obj) {
+            lv_obj_t* m_lbls[8] = {id(lbl_m1), id(lbl_m2), id(lbl_m3), id(lbl_m4), id(lbl_m5), id(lbl_m6), id(lbl_m7), id(lbl_m8)};
+            lv_obj_t* m_btns[8] = {id(btn_sel_m1), id(btn_sel_m2), id(btn_sel_m3), id(btn_sel_m4), id(btn_sel_m5), id(btn_sel_m6), id(btn_sel_m7), id(btn_sel_m8)};
+            lv_obj_t* h_lbls[8] = {id(lbl_h1), id(lbl_h2), id(lbl_h3), id(lbl_h4), id(lbl_h5), id(lbl_h6), id(lbl_h7), id(lbl_h8)};
+            lv_obj_t* h_btns[8] = {id(btn_sel_h1), id(btn_sel_h2), id(btn_sel_h3), id(btn_sel_h4), id(btn_sel_h5), id(btn_sel_h6), id(btn_sel_h7), id(btn_sel_h8)};
+
+            for (int i = 0; i < 8; i++) {
+              set_lbl_diff(m_lbls[i], "Step " + std::to_string(i + 1) + ": " + std::to_string((int)*active_t.at(i)) + "C • " + std::to_string(*active_m.at(i)) + "m");
+              set_hid_diff(m_btns[i], id(active_mash_steps) < (i + 1));
+              set_bg_diff(m_btns[i], lv_color_hex(id(editing_mash_step) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
+
+              set_lbl_diff(h_lbls[i], "Hop " + std::to_string(i + 1) + ": " + std::to_string(*active_h.at(i)) + " min");
+              set_hid_diff(h_btns[i], id(active_hop_count) < (i + 1));
+              set_bg_diff(h_btns[i], lv_color_hex(id(editing_hop_idx) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
+            }
+
+            int es = id(editing_mash_step);
+            if (es >= 1 && es <= 8) {
+              set_lbl_diff(id(lbl_edit_step_title), "EDITING STEP " + std::to_string(es));
+              set_lbl_diff(id(lbl_edit_step_temp), std::to_string((int)*active_t.at(es - 1)) + " °C");
+              set_lbl_diff(id(lbl_edit_step_time), std::to_string(*active_m.at(es - 1)) + "m");
+            }
+            int eh = id(editing_hop_idx);
+            if (eh >= 1 && eh <= 8) {
+              set_lbl_diff(id(lbl_edit_hop_title), "HOP " + std::to_string(eh) + " ADDITION TIME");
+              set_lbl_diff(id(lbl_edit_hop_time), std::to_string(*active_h.at(eh - 1)) + "m");
+            }
+            set_lbl_diff(id(lbl_boil_time_val), "Boil: " + std::to_string(id(boil_time_min)) + " min");
+            set_lbl_diff(id(lbl_boil_pwr_val), "Power: " + std::to_string(id(boil_power_pct)) + "%");
+            set_lbl_diff(id(lbl_slot_1), id(slot1_name));
+            set_lbl_diff(id(lbl_slot_2), id(slot2_name));
+            set_lbl_diff(id(lbl_slot_3), id(slot3_name));
+            set_lbl_diff(id(lbl_slot_4), id(slot4_name));
+            set_lbl_diff(id(lbl_slot_selected), "Selected: Slot " + std::to_string(id(selected_slot)));
+            set_bg_diff(id(btn_slot_1), lv_color_hex(id(selected_slot) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_slot_2), lv_color_hex(id(selected_slot) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_slot_3), lv_color_hex(id(selected_slot) == 3 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_slot_4), lv_color_hex(id(selected_slot) == 4 ? 0x1D4ED8 : 0x1E293B), 0);
+          }
+
+          else if (act_scr == id(hardware_page)->obj) {
+            set_bg_diff(id(btn_mod_bm10), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_mod_bm20), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_mod_bm50), lv_color_hex((id(num_elements) == 2 && id(element_watts) == 3200) ? 0x1D4ED8 : 0x1E293B), 0);
+
+            set_bg_diff(id(btn_el_1), lv_color_hex(id(num_elements) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_el_2), lv_color_hex(id(num_elements) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
+
+            set_bg_diff(id(btn_pmp_1), lv_color_hex(id(num_pumps) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_pmp_2), lv_color_hex(id(num_pumps) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
+
+            set_bg_diff(id(btn_amp_10), lv_color_hex(id(max_amps) == 10 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_amp_13), lv_color_hex(id(max_amps) == 13 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_amp_16), lv_color_hex(id(max_amps) == 16 ? 0x1D4ED8 : 0x1E293B), 0);
+            set_bg_diff(id(btn_amp_0),  lv_color_hex(id(max_amps) == 0  ? 0x1D4ED8 : 0x1E293B), 0);
+
+            set_lbl_diff(id(lbl_pump_cycle_val), "Run " + std::to_string(id(pump_run_min)) + "m / Rest " + std::to_string(id(pump_rest_min)) + "m");
+
+            set_bg_diff(id(btn_swap_probes), lv_color_hex(id(swap_probes) ? 0x1D4ED8 : 0x1E293B), 0);
+            set_lbl_diff(id(lbl_swap_probes), id(swap_probes) ? "PROBES: SWAP" : "PROBES: NORM");
+
+            char pid_buf[80];
+            snprintf(pid_buf, sizeof(pid_buf), "%s  |  PID: P=%.3f I=%.4f D=%.2f", id(hw_status_text).c_str(), id(bm_pid).get_kp(), id(bm_pid).get_ki(), id(bm_pid).get_kd());
+            set_lbl_diff(id(hw_page_status), std::string(pid_buf));
+
+            if (id(brew_state) == 5) {
+              int cur_w = std::isnan(id(live_watts).state) ? 0 : (int)id(live_watts).state;
               int at_m = id(autotune_elapsed_sec) / 60;
               int at_s = id(autotune_elapsed_sec) % 60;
               std::string at_time = (at_m < 10 ? "0" : "") + std::to_string(at_m) + ":" + (at_s < 10 ? "0" : "") + std::to_string(at_s);
@@ -670,24 +715,28 @@ interval:
               std::string pulse = (id(autotune_elapsed_sec) % 2 == 0) ? "[TUNING]" : " TUNING ";
               set_bg_diff(id(autotune_banner), lv_color_hex((id(autotune_elapsed_sec) % 2 == 0) ? 0xD97706 : 0xB45309), 0);
               set_lbl_diff(id(lbl_autotune_banner), pulse + " " + at_time + " | Kettle: " + std::to_string(t10 / 10) + "." + std::to_string(abs(t10 % 10)) + "C -> 65.0C | " + std::to_string(cur_w) + "W");
-              id(status_text) = "PID AUTOTUNE (" + at_time + ") - " + std::to_string(heat_pct) + "% PWR";
+            } else if (id(status_text).find("SAVED PID:") != std::string::npos) {
+              set_bg_diff(id(autotune_banner), lv_color_hex(0x059669), 0);
+              set_lbl_diff(id(lbl_autotune_banner), "AUTOTUNE COMPLETE & SAVED TO FLASH!");
+            } else if (id(status_text).find("ERROR:") == std::string::npos) {
+              set_bg_diff(id(autotune_banner), lv_color_hex(0x1E293B), 0);
+              set_lbl_diff(id(lbl_autotune_banner), "PID TUNER: IDLE (Fill kettle with water before tuning)");
             }
-          } else if (id(status_text).find("ERROR:") == std::string::npos && id(status_text).find("SAVED PID:") == std::string::npos) {
-            set_bg_diff(id(autotune_banner), lv_color_hex(0x1E293B), 0);
-            set_lbl_diff(id(lbl_autotune_banner), "PID TUNER: IDLE (Fill kettle with water before tuning)");
           }
 
-          set_lbl_diff(id(lvgl_status_lbl), id(status_text));
-          set_lbl_diff(id(lbl_brew_recipe), "Recipe: " + id(recipe_name));
-          set_lbl_diff(id(lvgl_hw_badge), pwr_badge);
-          set_lbl_diff(id(home_hw_badge), id(hw_status_text));
-
-          std::string home_t = "--.-";
-          if (!std::isnan(id(kettle_temp).state)) {
-            int ht10 = (int)(id(kettle_temp).state * 10.0f);
-            home_t = std::to_string(ht10 / 10) + "." + std::to_string(abs(ht10 % 10));
+          else if (act_scr == id(wifi_page)->obj) {
+            if (id(my_wifi).is_connected() && !id(my_wifi).get_ip_addresses().empty()) {
+              wifi_ap_record_t ap_info{};
+              std::string active_ssid = (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) ? bm_safe_ssid(ap_info.ssid) : "Online";
+              std::vector<char> ip_buf(network::IP_ADDRESS_BUFFER_SIZE, 0);
+              id(my_wifi).get_ip_addresses().at(0).str_to(ip_buf.data());
+              std::string ip_str(ip_buf.data());
+              set_lbl_diff(id(wifi_conn_info), "Connected: " + active_ssid + " (" + ip_str + ")");
+              lv_obj_set_style_text_color(id(wifi_conn_info), lv_color_hex(0x34D399), 0);
+              set_lbl_diff(id(wifi_web_url), "http://" + ip_str + "/brewcontrol");
+            } else {
+              set_lbl_diff(id(wifi_conn_info), "Not connected (Hotspot: BM-BrewController)");
+              lv_obj_set_style_text_color(id(wifi_conn_info), lv_color_hex(0xF59E0B), 0);
+              set_lbl_diff(id(wifi_web_url), "http://192.168.4");
+            }
           }
-
-          set_lbl_diff(id(lbl_pump_cycle_val), "Run " + std::to_string(id(pump_run_min)) + "m / Rest " + std::to_string(id(pump_rest_min)) + "m");
-          std::string state_short = (id(brew_state) == 0) ? "IDLE" : (id(brew_state) == 1) ? "MASHING" : (id(brew_state) == 3) ? "BOILING" : (id(brew_state) == 5) ? "TUNING" : (id(brew_state) == 7) ? "DELAYED" : "PAUSED";
-          set_lbl_diff(id(home_status_badge), state_short + " • " + home_t + " °C");

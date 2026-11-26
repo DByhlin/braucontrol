@@ -151,3 +151,18 @@ inline void bm_del_hop(std::vector<int*> &hops, int &count, int &sel) {
 #define BM_TEMPS std::vector<float*>{&id(mash_temp_1), &id(mash_temp_2), &id(mash_temp_3), &id(mash_temp_4), &id(mash_temp_5), &id(mash_temp_6), &id(mash_temp_7), &id(mash_temp_8)}
 #define BM_TIMES std::vector<int*>{&id(mash_time_1), &id(mash_time_2), &id(mash_time_3), &id(mash_time_4), &id(mash_time_5), &id(mash_time_6), &id(mash_time_7), &id(mash_time_8)}
 #define BM_HOPS  std::vector<int*>{&id(hop_time_1), &id(hop_time_2), &id(hop_time_3), &id(hop_time_4), &id(hop_time_5), &id(hop_time_6), &id(hop_time_7), &id(hop_time_8)}
+
+#include <cstdlib>
+#include <cstring>
+
+inline float bm_safe_stof(const std::string &s, float fallback = 0.0f) {
+  if (s.empty()) return fallback;
+  char *end = nullptr;
+  float val = std::strtof(s.c_str(), &end);
+  return (end == s.c_str()) ? fallback : val;
+}
+
+inline std::string bm_safe_ssid(const uint8_t *raw_ssid) {
+  size_t len = strnlen(reinterpret_cast<const char*>(raw_ssid), 32);
+  return std::string(reinterpret_cast<const char*>(raw_ssid), len);
+}

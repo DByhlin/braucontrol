@@ -764,13 +764,14 @@ lvgl:
             radius: 14
             on_click:
               - lambda: |-
+                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
+                    id(pump_1).turn_off();
+                    id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+                    return;
+                  }
                   if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
                   id(pump_1).toggle();
                   id(status_text) = "MANUAL OVERRIDE";
-                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
-                  id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
-                  return;
-                  }
             widgets:
               - label:
                   id: lbl_pill_pump1
@@ -791,13 +792,14 @@ lvgl:
             on_click:
               - lambda: |-
                   if (id(num_pumps) != 2) return;
+                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
+                    id(pump_2).turn_off();
+                    id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+                    return;
+                  }
                   if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
                   id(pump_2).toggle();
                   id(status_text) = "MANUAL OVERRIDE";
-                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
-                  id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
-                  return;
-                  }
             widgets:
               - label:
                   id: lbl_pill_pump2
@@ -1181,11 +1183,20 @@ lvgl:
                     - label:
                         align: CENTER
                         text: "+1m"
-              - label:
+              - button:
+                  id: btn_swap_probes
                   x: 610
-                  y: 182
-                  text_color: 0x64748B
-                  text: "(0m = cont.)"
+                  y: 172
+                  width: 135
+                  height: 38
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: 'id(swap_probes) = !id(swap_probes);'
+                  widgets:
+                    - label:
+                        id: lbl_swap_probes
+                        align: CENTER
+                        text: "PROBES: NORM"
 
         # Card 2: PID Auto-Tune & Flash Storage (Sky Blue Accent)
         - obj:
@@ -2301,7 +2312,7 @@ lvgl:
                             if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
                               std::string opts = "";
                               for (int i = 0; i < ap_count; i++) {
-                                std::string ssid_str(reinterpret_cast<const char*>(ap_list.at(i).ssid));
+                                std::string ssid_str = bm_safe_ssid(ap_list.at(i).ssid);
                                 if (!ssid_str.empty()) {
                                   if (!opts.empty()) opts += "\n";
                                   opts += ssid_str;
@@ -2378,8 +2389,9 @@ lvgl:
                         if (std::string(selected_ssid.data()) != "Tap SCAN to find Wi-Fi") {
                           id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
                           lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
-                          delay(500);
-                          App.safe_reboot();
+                          App.scheduler.set_timeout(nullptr, "wifi_reboot", 600, []() {
+                            App.safe_reboot();
+                          });
                         }
                   widgets:
                     - label:
