@@ -24,6 +24,17 @@ esphome:
             - delay: 1s
             - lvgl.widget.hide: boot_screen
       - script.execute: register_beerxml_uploader
+      - lambda: |-
+          id(bm_pid).set_kp(id(pid_kp));
+          id(bm_pid).set_ki(id(pid_ki));
+          id(bm_pid).set_kd(id(pid_kd));
+          lv_obj_t *tb = lv_tabview_get_tab_btns(id(recipe_tabs));
+          lv_obj_set_style_bg_color(tb, lv_color_hex(0x0F172A), LV_PART_MAIN);
+          lv_obj_set_style_text_color(tb, lv_color_hex(0x94A3B8), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(tb, lv_color_hex(0x1E293B), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+          lv_obj_set_style_text_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+          lv_obj_set_style_border_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+
   min_version: "2026.1.0"
 
 esp32:
@@ -133,10 +144,9 @@ output:
               req_lvl = (float)id(boil_power_pct) / 100.0f;
             }
 
-            // Calculate max allowed duty cycle based on 230V breaker rating
-            // BM50 = 2x 1600W (3200W total); BM20 = 1x 2000W; BM10 = 1x 1200W
-            float total_watts = (id(num_elements) == 2) ? 3200.0f : 2000.0f;
-            float max_watts = (id(max_amps) > 0) ? (id(max_amps) * 230.0f * 0.95f) : 9999.0f; // 5% safety margin
+            // Calculate max allowed duty cycle based on 230V breaker rating & model wattage
+            float total_watts = (float)id(element_watts);
+            float max_watts = (id(max_amps) > 0) ? (id(max_amps) * 230.0f * 0.95f) : 9999.0f;
             float max_cap = (max_watts < total_watts) ? (max_watts / total_watts) : 1.0f;
 
             float final_lvl = (req_lvl > max_cap) ? max_cap : req_lvl;
@@ -146,9 +156,8 @@ output:
               id(heater_1_pwm).set_level(final_lvl);
               id(heater_2_pwm).set_level(0.0f);
             } else {
-              // If breaker <= 13A on a 2-element BM50, never fire both 1600W elements simultaneously!
+              // If breaker <= 13A on a 2-element BM50, alternate elements every 10s
               if (id(max_amps) > 0 && id(max_amps) <= 13) {
-                // Alternate which element carries the load every 10 seconds
                 bool use_h1 = ((millis() / 10000) % 2 == 0);
                 float single_lvl = (final_lvl * 2.0f > 1.0f) ? 1.0f : (final_lvl * 2.0f);
                 id(heater_1_pwm).set_level(use_h1 ? single_lvl : 0.0f);
@@ -207,6 +216,45 @@ sensor:
     id: secondary_temp
     name: "Secondary Temp"
     update_interval: 2s
+
+  - platform: template
+    id: live_watts
+    name: "Live Power"
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    update_interval: 2s
+    web_server:
+      sorting_group_id: grp_telemetry
+      sorting_weight: 3
+    lambda: |-
+      float w = 0.0f;
+      float total_el_w = (float)id(element_watts);
+      if (id(brew_state) == 0) {
+        if (id(num_elements) == 1) {
+          if (id(manual_htr_1)) w += total_el_w;
+        } else {
+          float per_el = total_el_w / 2.0f;
+          if (id(manual_htr_1)) w += per_el;
+          if (id(manual_htr_2)) w += per_el;
+        }
+      } else {
+        w += total_el_w * id(current_heat_level);
+      }
+      if (id(pump_1).state) w += 25.0f;
+      if (id(num_pumps) == 2 && id(pump_2).state) w += 25.0f;
+      return w;
+
+  - platform: template
+    id: live_amps
+    name: "Current Draw"
+    unit_of_measurement: "A"
+    accuracy_decimals: 1
+    update_interval: 2s
+    web_server:
+      sorting_group_id: grp_telemetry
+      sorting_weight: 4
+    lambda: |-
+      return id(live_watts).state / 230.0f;
 
 globals:
   - id: num_elements
@@ -316,18 +364,15 @@ globals:
     type: int
     restore_value: yes
     initial_value: '16'
-
   - id: web_cmd
     type: std::string
     initial_value: '""'
   - id: import_handler_registered
     type: bool
     initial_value: 'false'
-
   - id: autotune_elapsed_sec
     type: int
     initial_value: '0'
-
   # Dynamic Step & Hop Counts (1-5 Mash Steps, 0-4 Hops)
   - id: active_mash_steps
     type: int
@@ -386,7 +431,6 @@ globals:
     type: int
     restore_value: yes
     initial_value: '0'
-
   # 4 Persistent Recipe Slots (Names + Mash Counts + Step 1-5 + Boil + Hop Counts + Hops 1-4)
   - id: slot1_name
     type: std::string
@@ -396,7 +440,6 @@ globals:
     type: std::string
     restore_value: yes
     initial_value: '"3|52,10|63,40|72,20|78,10|78,0|60,85|2|60,15,0,0"'
-
   - id: slot2_name
     type: std::string
     restore_value: yes
@@ -405,7 +448,6 @@ globals:
     type: std::string
     restore_value: yes
     initial_value: '"2|66,60|78,10|78,0|78,0|78,0|60,85|4|60,15,5,0"'
-
   - id: slot3_name
     type: std::string
     restore_value: yes
@@ -414,7 +456,6 @@ globals:
     type: std::string
     restore_value: yes
     initial_value: '"4|44,15|52,10|63,35|72,20|78,10|60,85|1|60,0,0,0"'
-
   - id: slot4_name
     type: std::string
     restore_value: yes
@@ -423,6 +464,36 @@ globals:
     type: std::string
     restore_value: yes
     initial_value: '"1|65,60|78,0|78,0|78,0|78,0|60,85|1|60,0,0,0"'
+  - id: pid_kp
+    type: float
+    restore_value: yes
+    initial_value: '0.15'
+  - id: pid_ki
+    type: float
+    restore_value: yes
+    initial_value: '0.002'
+  - id: pid_kd
+    type: float
+    restore_value: yes
+    initial_value: '1.5'
+  - id: element_watts
+    type: int
+    restore_value: yes
+    initial_value: '3200'
+  - id: delay_start_min
+    type: int
+    initial_value: '0'
+  - id: delay_start_sec
+    type: int
+    initial_value: '0'
+  - id: pump_run_min
+    type: int
+    restore_value: yes
+    initial_value: '10'
+  - id: pump_rest_min
+    type: int
+    restore_value: yes
+    initial_value: '1'
 
 switch:
   - platform: gpio
@@ -597,6 +668,14 @@ text_sensor:
       sorting_group_id: grp_telemetry
       sorting_weight: 2
     lambda: |-
+      if (id(brew_state) == 7) {
+        int rem = id(delay_start_sec);
+        int hrs = rem / 3600;
+        int mns = (rem % 3600) / 60;
+        int scs = rem % 60;
+        if (hrs > 0) return (hrs < 10 ? "0" : "") + std::to_string(hrs) + "h " + (mns < 10 ? "0" : "") + std::to_string(mns) + "m";
+        return (mns < 10 ? "0" : "") + std::to_string(mns) + ":" + (scs < 10 ? "0" : "") + std::to_string(scs);
+      }
       int mins = id(seconds_remaining) / 60;
       int secs = id(seconds_remaining) % 60;
       return (mins < 10 ? "0" : "") + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs);
@@ -658,6 +737,31 @@ button:
       - script.execute: cmd_start_boil
 
 select:
+
+  - platform: template
+    name: "Braumeister Model"
+    optimistic: true
+    web_server:
+      sorting_group_id: grp_hardware
+      sorting_weight: 1
+    options:
+      - "BM10 (1200W)"
+      - "BM20 (2000W)"
+      - "BM50 2-Pump (3200W)"
+      - "BM50 1-Pump (3200W)"
+    initial_option: "BM50 2-Pump (3200W)"
+    on_value:
+      - lambda: |-
+          if (x == "BM10 (1200W)") {
+            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200; id(pump_2).turn_off();
+          } else if (x == "BM20 (2000W)") {
+            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000; id(pump_2).turn_off();
+          } else if (x == "BM50 1-Pump (3200W)") {
+            id(num_elements) = 2; id(num_pumps) = 1; id(element_watts) = 3200; id(pump_2).turn_off();
+          } else {
+            id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3200;
+          }
+  
   - platform: template
     name: "Load Recipe Slot"
     optimistic: true
@@ -695,3 +799,32 @@ select:
           else if (x == "13A (3.0kW)") id(max_amps) = 13;
           else if (x == "16A (3.6kW)") id(max_amps) = 16;
           else id(max_amps) = 0;
+
+number:
+  - platform: template
+    name: "Pump Run Interval"
+    unit_of_measurement: "min"
+    min_value: 1
+    max_value: 30
+    step: 1
+    update_interval: 2s
+    web_server:
+      sorting_group_id: grp_hardware
+      sorting_weight: 3
+    lambda: 'return id(pump_run_min);'
+    set_action:
+      - lambda: 'id(pump_run_min) = (int)x;'
+
+  - platform: template
+    name: "Pump Rest Interval"
+    unit_of_measurement: "min"
+    min_value: 0
+    max_value: 10
+    step: 1
+    update_interval: 2s
+    web_server:
+      sorting_group_id: grp_hardware
+      sorting_weight: 4
+    lambda: 'return id(pump_rest_min);'
+    set_action:
+      - lambda: 'id(pump_rest_min) = (int)x;'

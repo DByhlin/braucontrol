@@ -14,7 +14,7 @@
       widgets:
         - label:
             align: CENTER
-            text_color: 0xFFFFFF
+            text_color: 0xF8FAFC
             text: "< HOME"
   hw_btn: &hw_btn
     width: 170
@@ -35,7 +35,7 @@ lvgl:
           id: boot_screen
           width: 800
           height: 480
-          bg_color: 0x111111
+          bg_color: 0x0B0F17
           border_width: 0
           radius: 0
           widgets:
@@ -45,7 +45,7 @@ lvgl:
                 y: -70
                 text: "BrauControl"
                 text_font: montserrat_42
-                text_color: 0xFFFFFF
+                text_color: 0xF8FAFC
             - bar:
                 id: wifi_progress_bar
                 align: CENTER
@@ -55,23 +55,24 @@ lvgl:
                 min_value: 0
                 max_value: 100
                 value: 0
-                bg_color: 0x333333
+                bg_color: 0x1E293B
                 indicator:
-                  bg_color: 0xE67E22  # Brewing amber/orange accent
+                  bg_color: 0xF59E0B
             - label:
                 id: boot_status_label
                 align: CENTER
                 y: 45
                 text: "Initializing system and webserver..."
-                text_color: 0xAAAAAA
+                text_color: 0x94A3B8
   displays:
     - my_display
   touchscreens:
     - my_touchscreen
   buffer_size: 100%
   theme:
-    page:
-      bg_color: 0x0B0F17
+    dark_mode: true
+    label:
+      text_color: 0xF8FAFC
     button:
       bg_color: 0x1E293B
       border_width: 1
@@ -81,168 +82,455 @@ lvgl:
         bg_color: 0x0F172A
         translate_y: 2
     tabview:
-      bg_color: 0x0B0F17
+      bg_color: 0x111827
+    textarea:
+      bg_color: 0x1E293B
+      text_color: 0xF8FAFC
+      border_color: 0x334155
+      border_width: 1
+    dropdown:
+      bg_color: 0x1E293B
+      text_color: 0xF8FAFC
+      border_color: 0x334155
+      border_width: 1
   pages:
     - id: home_page
       widgets:
+        # Top Header Bar
         - obj:
-            x: 25
-            y: 10
-            width: 345
-            height: 38
-            bg_color: 0x1E293B
-            border_width: 2
-            border_color: 0x000000
-            radius: 8
+            x: 20
+            y: 12
+            width: 760
+            height: 64
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
             scrollable: false
             pad_all: 0
             widgets:
               - label:
-                  align: CENTER
+                  x: 18
+                  y: 6
+                  text_font: montserrat_28
                   text_color: 0xFACC15
-                  text: "BrauControl - Universal brew controller"
-        - label:
-            id: home_wifi_lbl
-            align: TOP_RIGHT
-            x: -25
-            y: 18
-            text_color: 0xF59E0B
-            text: "WIFI: CHECKING..."
-        - label:
-            id: home_hw_badge
-            x: 25
-            y: 55
-            text_color: 0x94A3B8
-            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+                  text: "BrauControl"
+              - label:
+                  id: home_hw_badge
+                  x: 18
+                  y: 40
+                  text_color: 0x94A3B8
+                  text: "3200W | 2 EL | 2 PMP | 16A"
+              - label:
+                  id: home_status_badge
+                  align: TOP_MID
+                  y: 22
+                  text_color: 0x38BDF8
+                  text: "IDLE | --.- C"
+              - label:
+                  id: home_wifi_lbl
+                  align: TOP_RIGHT
+                  x: -18
+                  y: 22
+                  text_color: 0xF59E0B
+                  text: "WIFI: CHECKING..."
 
+        # Tile 1: Brew Session (Emerald Accent + Kettle Icon)
         - button:
-            x: 25
+            x: 20
             y: 92
-            width: 365
+            width: 370
             height: 175
-            bg_color: 0x065F46
-            border_color: 0x10B981
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
             radius: 16
             on_click:
               - lvgl.page.show:
                   id: brew_page
                   animation: NONE
             widgets:
+              - obj:
+                  x: 0
+                  y: 24
+                  width: 6
+                  height: 125
+                  bg_color: 0x10B981
+                  border_width: 0
+                  radius: 3
+              # Kettle Vector Icon
+              - obj:
+                  x: 24
+                  y: 30
+                  width: 38
+                  height: 38
+                  bg_opa: TRANSP
+                  border_width: 0
+                  scrollable: false
+                  pad_all: 0
+                  widgets:
+                    - obj:
+                        x: 15
+                        y: 2
+                        width: 8
+                        height: 4
+                        bg_color: 0x10B981
+                        border_width: 0
+                        radius: 2
+                    - obj:
+                        x: 7
+                        y: 6
+                        width: 24
+                        height: 4
+                        bg_color: 0x10B981
+                        border_width: 0
+                        radius: 2
+                    - obj:
+                        x: 2
+                        y: 14
+                        width: 6
+                        height: 10
+                        bg_opa: TRANSP
+                        border_width: 2
+                        border_color: 0x10B981
+                        radius: 3
+                    - obj:
+                        x: 30
+                        y: 14
+                        width: 6
+                        height: 10
+                        bg_opa: TRANSP
+                        border_width: 2
+                        border_color: 0x10B981
+                        radius: 3
+                    - obj:
+                        x: 7
+                        y: 12
+                        width: 24
+                        height: 23
+                        bg_opa: TRANSP
+                        border_width: 3
+                        border_color: 0x10B981
+                        radius: 4
               - label:
-                  align: CENTER
-                  y: -14
+                  x: 72
+                  y: 34
                   text_font: montserrat_28
+                  text_color: 0x10B981
                   text: "BREW SESSION"
               - label:
-                  align: CENTER
-                  y: 24
-                  text_color: 0xA7F3D0
-                  text: "Mash, Boil & Manual Control"
-
+                  x: 26
+                  y: 84
+                  text_color: 0xCBD5E1
+                  text: "Automated Mash, Boil & Manual Control"
+              - label:
+                  x: 26
+                  y: 118
+                  text_color: 0x64748B
+                  text: "Tap to monitor gauges & run brew ->"
+        # Tile 2: Recipe Builder (Blue Accent + Open Book Icon)
         - button:
             x: 410
             y: 92
-            width: 365
+            width: 370
             height: 175
-            bg_color: 0x1E3A8A
-            border_color: 0x3B82F6
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
             radius: 16
             on_click:
               - lvgl.page.show:
                   id: recipe_page
                   animation: NONE
             widgets:
+              - obj:
+                  x: 0
+                  y: 24
+                  width: 6
+                  height: 125
+                  bg_color: 0x3B82F6
+                  border_width: 0
+                  radius: 3
+              # Open Book Vector Icon
+              - obj:
+                  x: 24
+                  y: 30
+                  width: 38
+                  height: 38
+                  bg_opa: TRANSP
+                  border_width: 0
+                  scrollable: false
+                  pad_all: 0
+                  widgets:
+                    - obj:
+                        x: 3
+                        y: 6
+                        width: 17
+                        height: 26
+                        bg_opa: TRANSP
+                        border_width: 3
+                        border_color: 0x60A5FA
+                        radius: 3
+                    - obj:
+                        x: 18
+                        y: 6
+                        width: 17
+                        height: 26
+                        bg_opa: TRANSP
+                        border_width: 3
+                        border_color: 0x60A5FA
+                        radius: 3
+                    - obj:
+                        x: 7
+                        y: 13
+                        width: 8
+                        height: 2
+                        bg_color: 0x60A5FA
+                        border_width: 0
+                    - obj:
+                        x: 7
+                        y: 19
+                        width: 8
+                        height: 2
+                        bg_color: 0x60A5FA
+                        border_width: 0
+                    - obj:
+                        x: 23
+                        y: 13
+                        width: 8
+                        height: 2
+                        bg_color: 0x60A5FA
+                        border_width: 0
+                    - obj:
+                        x: 23
+                        y: 19
+                        width: 8
+                        height: 2
+                        bg_color: 0x60A5FA
+                        border_width: 0
               - label:
-                  align: CENTER
-                  y: -14
+                  x: 72
+                  y: 34
                   text_font: montserrat_28
+                  text_color: 0x60A5FA
                   text: "RECIPE BUILDER"
               - label:
-                  align: CENTER
-                  y: 24
-                  text_color: 0xBFDBFE
-                  text: "8-Step Mash, Hops & Slots"
+                  x: 26
+                  y: 84
+                  text_color: 0xCBD5E1
+                  text: "8-Step Mash, Hop Timers & Slots"
+              - label:
+                  x: 26
+                  y: 118
+                  text_color: 0x64748B
+                  text: "Edit steps or import BeerXML ->"
 
+        # Tile 3: Hardware Setup (Amber Accent + Wrench Icon)
         - button:
-            x: 25
+            x: 20
             y: 285
-            width: 365
+            width: 370
             height: 175
-            bg_color: 0x1E293B
-            border_color: 0x475569
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
             radius: 16
             on_click:
               - lvgl.page.show:
                   id: hardware_page
                   animation: NONE
             widgets:
-              - label:
-                  align: CENTER
-                  y: -14
-                  text_font: montserrat_28
-                  text: "HARDWARE SETUP"
-              - label:
-                  align: CENTER
+              - obj:
+                  x: 0
                   y: 24
+                  width: 6
+                  height: 125
+                  bg_color: 0xF59E0B
+                  border_width: 0
+                  radius: 3
+              # Wrench Vector Icon
+              - obj:
+                  x: 24
+                  y: 30
+                  width: 38
+                  height: 38
+                  bg_opa: TRANSP
+                  border_width: 0
+                  scrollable: false
+                  pad_all: 0
+                  widgets:
+                    - obj:
+                        x: 16
+                        y: 12
+                        width: 6
+                        height: 22
+                        bg_color: 0xFBBF24
+                        border_width: 0
+                        radius: 3
+                    - obj:
+                        x: 11
+                        y: 3
+                        width: 16
+                        height: 14
+                        bg_color: 0xFBBF24
+                        border_width: 0
+                        radius: 7
+                    - obj:
+                        x: 16
+                        y: 2
+                        width: 6
+                        height: 8
+                        bg_color: 0x111827
+                        border_width: 0
+                        radius: 1
+              - label:
+                  x: 72
+                  y: 34
+                  text_font: montserrat_28
+                  text_color: 0xFBBF24
+                  text: "HARDWARE"
+              - label:
+                  x: 26
+                  y: 84
                   text_color: 0xCBD5E1
-                  text: "Model, Fuse Limit & PID Tune"
-
+                  text: "BM10/20/50 Model, 230V Fuse & PID"
+              - label:
+                  x: 26
+                  y: 118
+                  text_color: 0x64748B
+                  text: "Configure power limits & auto-tune ->"
+        # Tile 4: Wi-Fi Settings (Violet Accent + Standard Wi-Fi Icon)
         - button:
             x: 410
             y: 285
-            width: 365
+            width: 370
             height: 175
-            bg_color: 0x4C1D95
-            border_color: 0x8B5CF6
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
             radius: 16
             on_click:
               - lvgl.page.show:
                   id: wifi_page
                   animation: NONE
             widgets:
+              - obj:
+                  x: 0
+                  y: 24
+                  width: 6
+                  height: 125
+                  bg_color: 0x8B5CF6
+                  border_width: 0
+                  radius: 3
+              # Standard Wi-Fi Signal Arcs Icon
+              - obj:
+                  x: 24
+                  y: 30
+                  width: 38
+                  height: 38
+                  bg_opa: TRANSP
+                  border_width: 0
+                  scrollable: false
+                  pad_all: 0
+                  widgets:
+                    - arc:
+                        x: 3
+                        y: 7
+                        width: 32
+                        height: 32
+                        start_angle: 225
+                        end_angle: 315
+                        value: 100
+                        adjustable: false
+                        arc_opa: TRANSP
+                        indicator:
+                          arc_width: 3
+                          arc_color: 0xA78BFA
+                    - arc:
+                        x: 9
+                        y: 13
+                        width: 20
+                        height: 20
+                        start_angle: 225
+                        end_angle: 315
+                        value: 100
+                        adjustable: false
+                        arc_opa: TRANSP
+                        indicator:
+                          arc_width: 3
+                          arc_color: 0xA78BFA
+                    - obj:
+                        x: 16
+                        y: 26
+                        width: 6
+                        height: 6
+                        bg_color: 0xA78BFA
+                        border_width: 0
+                        radius: 3
               - label:
-                  align: CENTER
-                  y: -14
+                  x: 72
+                  y: 34
                   text_font: montserrat_28
+                  text_color: 0xA78BFA
                   text: "WIFI SETTINGS"
               - label:
-                  align: CENTER
-                  y: 24
-                  text_color: 0xDDD6FE
-                  text: "Scan & Connect 2.4 GHz"
+                  x: 26
+                  y: 84
+                  text_color: 0xCBD5E1
+                  text: "2.4 GHz Network & Web Dashboard"
+              - label:
+                  x: 26
+                  y: 118
+                  text_color: 0x64748B
+                  text: "Scan networks & view controller IP ->"
+
     - id: brew_page
       widgets:
         - *home_btn
-        - label:
-            id: lvgl_status_lbl
-            x: 140
+        # Unified Top Header Card
+        - obj:
+            x: 135
             y: 10
-            text_color: 0xF8FAFC
-            text: "IDLE - READY TO BREW"
-        - label:
-            id: lvgl_wifi_lbl
-            align: TOP_RIGHT
-            x: -15
-            y: 10
-            text_color: 0xF59E0B
-            text: "WIFI: CHECKING..."
-        - label:
-            id: lbl_brew_recipe
-            align: TOP_RIGHT
-            x: -15
-            y: 34
-            text_color: 0x38BDF8
-            text: "Recipe: Custom Braumeister Brew"
-        - label:
-            id: lvgl_hw_badge
-            x: 140
-            y: 34
-            text_color: 0x94A3B8
-            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+            width: 645
+            height: 48
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 12
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  id: lvgl_status_lbl
+                  x: 14
+                  y: 4
+                  text_color: 0xF8FAFC
+                  text: "IDLE - READY TO BREW"
+              - label:
+                  id: lvgl_hw_badge
+                  x: 14
+                  y: 25
+                  text_color: 0x94A3B8
+                  text: "0W (0.0A / 16A)"
+              - label:
+                  id: lvgl_wifi_lbl
+                  align: TOP_RIGHT
+                  x: -14
+                  y: 4
+                  text_color: 0xF59E0B
+                  text: "WIFI: CHECKING..."
+              - label:
+                  id: lbl_brew_recipe
+                  align: TOP_RIGHT
+                  x: -14
+                  y: 25
+                  text_color: 0x38BDF8
+                  text: "Recipe: Custom Braumeister Brew"
 
+        # Card 1: Kettle Temp Arc Gauge (Amber Accent)
         - obj:
             x: 20
-            y: 66
+            y: 68
             width: 245
             height: 192
             bg_color: 0x111827
@@ -252,12 +540,20 @@ lvgl:
             scrollable: false
             pad_all: 0
             widgets:
+              - obj:
+                  x: 24
+                  y: 0
+                  width: 197
+                  height: 4
+                  bg_color: 0xF59E0B
+                  border_width: 0
+                  radius: 2
               - arc:
                   id: arc_kettle_temp
                   align: CENTER
-                  y: 10
-                  width: 146
-                  height: 146
+                  y: 12
+                  width: 144
+                  height: 144
                   min_value: 20
                   max_value: 100
                   value: 20
@@ -269,20 +565,21 @@ lvgl:
                     arc_color: 0xF59E0B
               - label:
                   align: TOP_MID
-                  y: 8
+                  y: 10
                   text_color: 0x94A3B8
-                  text: "KETTLE"
+                  text: "KETTLE TEMP"
               - label:
                   id: lbl_kettle_temp
                   align: CENTER
-                  y: 10
+                  y: 12
                   text_font: montserrat_28
                   text_color: 0xF8FAFC
                   text: "--.- C"
 
+        # Card 2: Target Temp & Step Badge (Sky Blue Accent)
         - obj:
             x: 280
-            y: 66
+            y: 68
             width: 245
             height: 192
             bg_color: 0x111827
@@ -292,6 +589,14 @@ lvgl:
             scrollable: false
             pad_all: 0
             widgets:
+              - obj:
+                  x: 24
+                  y: 0
+                  width: 197
+                  height: 4
+                  bg_color: 0x38BDF8
+                  border_width: 0
+                  radius: 2
               - label:
                   align: TOP_MID
                   y: 14
@@ -300,20 +605,28 @@ lvgl:
               - label:
                   id: lbl_target_temp
                   align: CENTER
-                  y: 6
+                  y: -4
                   text_font: montserrat_28
                   text_color: 0x38BDF8
                   text: "63.0 C"
+              - obj:
+                  x: 20
+                  y: 142
+                  width: 205
+                  height: 1
+                  bg_color: 0x1F2937
+                  border_width: 0
               - label:
                   id: lbl_step_badge
                   align: BOTTOM_MID
                   y: -14
-                  text_color: 0x94A3B8
+                  text_color: 0xCBD5E1
                   text: "Ready: Step 1 of 3"
 
+        # Card 3: Step Timer & Aux Probe (Emerald Accent)
         - obj:
             x: 540
-            y: 66
+            y: 68
             width: 240
             height: 192
             bg_color: 0x111827
@@ -323,32 +636,81 @@ lvgl:
             scrollable: false
             pad_all: 0
             widgets:
+              - obj:
+                  x: 24
+                  y: 0
+                  width: 192
+                  height: 4
+                  bg_color: 0x34D399
+                  border_width: 0
+                  radius: 2
               - label:
                   align: TOP_MID
                   y: 14
                   text_color: 0x94A3B8
                   text: "STEP TIMER"
+              - button:
+                  id: btn_delay_minus
+                  x: 10
+                  y: 64
+                  width: 46
+                  height: 44
+                  bg_color: 0x1E293B
+                  radius: 10
+                  on_click:
+                    - lambda: 'if (id(brew_state) == 0 && id(delay_start_min) >= 30) id(delay_start_min) -= 30;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xCBD5E1
+                        text: "-30m"
               - label:
                   id: lbl_timer
                   align: CENTER
-                  y: 6
+                  y: -4
                   text_font: montserrat_28
                   text_color: 0x34D399
                   text: "00:00"
+              - button:
+                  id: btn_delay_plus
+                  x: 184
+                  y: 64
+                  width: 46
+                  height: 44
+                  bg_color: 0x1E293B
+                  radius: 10
+                  on_click:
+                    - lambda: 'if (id(brew_state) == 0 && id(delay_start_min) < 720) id(delay_start_min) += 30;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xCBD5E1
+                        text: "+30m"
+              - obj:
+                  x: 20
+                  y: 142
+                  width: 200
+                  height: 1
+                  bg_color: 0x1F2937
+                  border_width: 0
               - label:
                   id: lbl_sec_temp
                   align: BOTTOM_MID
                   y: -14
-                  text_color: 0x94A3B8
+                  text_color: 0xCBD5E1
                   text: "Aux: --.- C"
+
+        # Manual Override Row (Heaters & Pumps)
         - button:
             id: pill_htr1
             x: 20
-            y: 272
+            y: 274
             width: 180
             height: 54
             bg_color: 0x1E293B
-            radius: 27
+            border_width: 1
+            border_color: 0x334155
+            radius: 14
             on_click:
               - lambda: |-
                   if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); id(manual_htr_2) = false; }
@@ -367,11 +729,13 @@ lvgl:
         - button:
             id: pill_htr2
             x: 213
-            y: 272
+            y: 274
             width: 180
             height: 54
             bg_color: 0x1E293B
-            radius: 27
+            border_width: 1
+            border_color: 0x334155
+            radius: 14
             on_click:
               - lambda: |-
                   if (id(num_elements) != 2) return;
@@ -391,11 +755,13 @@ lvgl:
         - button:
             id: pill_pump1
             x: 407
-            y: 272
+            y: 274
             width: 180
             height: 54
             bg_color: 0x1E293B
-            radius: 27
+            border_width: 1
+            border_color: 0x334155
+            radius: 14
             on_click:
               - lambda: |-
                   if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
@@ -405,7 +771,6 @@ lvgl:
                   id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
                   return;
                   }
-
             widgets:
               - label:
                   id: lbl_pill_pump1
@@ -416,11 +781,13 @@ lvgl:
         - button:
             id: pill_pump2
             x: 600
-            y: 272
+            y: 274
             width: 180
             height: 54
             bg_color: 0x1E293B
-            radius: 27
+            border_width: 1
+            border_color: 0x334155
+            radius: 14
             on_click:
               - lambda: |-
                   if (id(num_pumps) != 2) return;
@@ -437,21 +804,30 @@ lvgl:
                   align: CENTER
                   text_color: 0xE2E8F0
                   text: "PUMP 2: OFF"
+        # Primary Action Buttons (START / STOP / BOIL)
         - button:
             x: 20
             y: 344
             width: 245
             height: 112
             bg_color: 0x059669
+            border_width: 2
             border_color: 0x34D399
-            radius: 14
+            radius: 16
             on_click:
               - script.execute: cmd_start_brew
             widgets:
               - label:
                   align: CENTER
+                  y: -10
                   text_font: montserrat_28
+                  text_color: 0xFFFFFF
                   text: "START"
+              - label:
+                  align: CENTER
+                  y: 22
+                  text_color: 0xD1FAE5
+                  text: "Begin / Resume Mash"
 
         - button:
             x: 280
@@ -459,15 +835,23 @@ lvgl:
             width: 245
             height: 112
             bg_color: 0xDC2626
+            border_width: 2
             border_color: 0xF87171
-            radius: 14
+            radius: 16
             on_click:
               - script.execute: cmd_stop_all
             widgets:
               - label:
                   align: CENTER
+                  y: -10
                   text_font: montserrat_28
+                  text_color: 0xFFFFFF
                   text: "STOP"
+              - label:
+                  align: CENTER
+                  y: 22
+                  text_color: 0xFEE2E2
+                  text: "Halt Heaters & Pumps"
 
         - button:
             x: 540
@@ -475,22 +859,31 @@ lvgl:
             width: 240
             height: 112
             bg_color: 0xD97706
+            border_width: 2
             border_color: 0xFBBF24
-            radius: 14
+            radius: 16
             on_click:
               - script.execute: cmd_start_boil
             widgets:
               - label:
                   align: CENTER
+                  y: -10
                   text_font: montserrat_28
+                  text_color: 0xFFFFFF
                   text: "BOIL"
+              - label:
+                  align: CENTER
+                  y: 22
+                  text_color: 0xFEF3C7
+                  text: "Heat to 100 C & Hops"
 
+        # Step Confirmation Overlay Modal
         - obj:
             id: step_confirm_modal
             align: CENTER
             width: 560
             height: 250
-            bg_color: 0x0F172A
+            bg_color: 0x111827
             border_width: 3
             border_color: 0xF59E0B
             radius: 16
@@ -498,6 +891,14 @@ lvgl:
             scrollable: false
             pad_all: 0
             widgets:
+              - obj:
+                  x: 40
+                  y: 0
+                  width: 480
+                  height: 5
+                  bg_color: 0xF59E0B
+                  border_width: 0
+                  radius: 2
               - label:
                   id: lbl_modal_title
                   align: TOP_MID
@@ -517,6 +918,7 @@ lvgl:
                   width: 300
                   height: 64
                   bg_color: 0x059669
+                  border_width: 2
                   border_color: 0x34D399
                   radius: 12
                   on_click:
@@ -527,228 +929,400 @@ lvgl:
                         text_font: montserrat_28
                         text_color: 0xFFFFFF
                         text: "CONTINUE"
+
     - id: hardware_page
       widgets:
         - *home_btn
         - label:
             x: 140
-            y: 20
-            text_color: 0x0F172A
-            text: "BRAUMEISTER HARDWARE CONFIGURATION"
-
-        - label:
-            x: 25
-            y: 78
-            text_color: 0x0F172A
-            text: "Model Preset:"
-        - button:
-            <<: *hw_btn
-            x: 220
-            y: 66
-            on_click:
-              - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(pump_2).turn_off();'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "BM10 / BM20"
-        - button:
-            <<: *hw_btn
-            x: 405
-            y: 66
-            on_click:
-              - lambda: 'id(num_elements) = 2; id(num_pumps) = 2;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "BM50"
-
-        - label:
-            x: 25
-            y: 148
-            text_color: 0x0F172A
-            text: "Heating Elements:"
-        - button:
-            <<: *hw_btn
-            x: 220
-            y: 136
-            on_click:
-              - lambda: 'id(num_elements) = 1;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "1 ELEMENT"
-        - button:
-            <<: *hw_btn
-            x: 405
-            y: 136
-            on_click:
-              - lambda: 'id(num_elements) = 2;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "2 ELEMENTS"
-
-        - label:
-            x: 25
-            y: 218
-            text_color: 0x0F172A
-            text: "Circulation Pumps:"
-        - button:
-            <<: *hw_btn
-            x: 220
-            y: 206
-            on_click:
-              - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "1 PUMP"
-        - button:
-            <<: *hw_btn
-            x: 405
-            y: 206
-            on_click:
-              - lambda: 'id(num_pumps) = 2;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "2 PUMPS"
-        - label:
-            x: 25
-            y: 288
-            text_color: 0x0F172A
-            text: "230V Fuse Limit:"
-        - button:
-            id: btn_amp_10
-            x: 220
-            y: 276
-            width: 125
-            height: 50
-            on_click:
-              - lambda: 'id(max_amps) = 10;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "10A (2.3kW)"
-        - button:
-            id: btn_amp_13
-            x: 355
-            y: 276
-            width: 125
-            height: 50
-            on_click:
-              - lambda: 'id(max_amps) = 13;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "13A (3.0kW)"
-        - button:
-            id: btn_amp_16
-            x: 490
-            y: 276
-            width: 125
-            height: 50
-            on_click:
-              - lambda: 'id(max_amps) = 16;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "16A (3.6kW)"
-        - button:
-            id: btn_amp_0
-            x: 625
-            y: 276
-            width: 125
-            height: 50
-            on_click:
-              - lambda: 'id(max_amps) = 0;'
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "MAX / OFF"
-
+            y: 12
+            text_color: 0xF8FAFC
+            text: "HARDWARE & PID CONFIGURATION"
         - label:
             id: hw_page_status
-            x: 25
-            y: 332
-            text_color: 0x1D4ED8
-            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+            x: 140
+            y: 36
+            text_color: 0x38BDF8
+            text: "BM50 | 3200W | 2 EL | 2 PMP | 16A"
 
+        # Card 1: Kettle Model, Elements, Pumps & 230V Fuse Limit (Amber Accent)
         - obj:
-            id: autotune_banner
-            x: 25
-            y: 360
-            width: 725
-            height: 44
-            bg_color: 0x1E293B
+            x: 20
+            y: 68
+            width: 760
+            height: 226
+            bg_color: 0x111827
             border_width: 1
-            border_color: 0x334155
-            radius: 10
+            border_color: 0x1F2937
+            radius: 14
             scrollable: false
             pad_all: 0
             widgets:
-              - label:
-                  id: lbl_autotune_banner
-                  align: CENTER
-                  text_color: 0xE2E8F0
-                  text: "PID TUNER: IDLE (Fill kettle with water before tuning)"
+              - obj:
+                  x: 0
+                  y: 18
+                  width: 5
+                  height: 190
+                  bg_color: 0xF59E0B
+                  border_width: 0
+                  radius: 3
 
-        - button:
-            id: btn_pid_autotune
-            x: 25
-            y: 412
-            width: 355
-            height: 52
-            bg_color: 0x059669
-            on_click:
-              - lambda: |-
-                  if (std::isnan(id(kettle_temp).state)) {
-                    id(status_text) = "ERROR: NO KETTLE TEMP SENSOR!";
-                    lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0xDC2626), 0);
-                    lv_label_set_text(id(lbl_autotune_banner), "ERROR: NO KETTLE TEMP PROBE DETECTED!");
-                    return;
-                  }
-                  id(manual_htr_1) = false;
-                  id(manual_htr_2) = false;
-                  id(autotune_elapsed_sec) = 0;
-                  id(brew_state) = 5;
-                  id(pump_1).turn_on();
-                  if (id(num_pumps) == 2) id(pump_2).turn_on();
-                  id(status_text) = "PID AUTOTUNE IN PROGRESS (65 C)";
-              - climate.control:
-                  id: bm_pid
-                  mode: HEAT
-                  target_temperature: 65°C
-              - climate.pid.autotune: bm_pid
-            widgets:
+              # Row 1: Model Presets
               - label:
-                  align: CENTER
-                  text_color: 0xFFFFFF
-                  text: "START PID AUTOTUNE (65°C)"
+                  x: 22
+                  y: 26
+                  text_color: 0x94A3B8
+                  text: "MODEL PRESET"
+              - button:
+                  id: btn_mod_bm10
+                  x: 185
+                  y: 12
+                  width: 180
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200; id(pump_2).turn_off();'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "BM10 (1.2kW)"
+              - button:
+                  id: btn_mod_bm20
+                  x: 375
+                  y: 12
+                  width: 180
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000; id(pump_2).turn_off();'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "BM20 (2.0kW)"
+              - button:
+                  id: btn_mod_bm50
+                  x: 565
+                  y: 12
+                  width: 180
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3200;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "BM50 (3.2kW)"
+              # Row 2: Heating Elements & Circulation Pumps
+              - label:
+                  x: 22
+                  y: 80
+                  text_color: 0x94A3B8
+                  text: "ELEMENTS"
+              - button:
+                  id: btn_el_1
+                  x: 185
+                  y: 66
+                  width: 105
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_elements) = 1; if (id(element_watts) > 2000) id(element_watts) = 2000;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "1 EL"
+              - button:
+                  id: btn_el_2
+                  x: 298
+                  y: 66
+                  width: 105
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_elements) = 2; id(element_watts) = 3200;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "2 EL"
 
-        - button:
-            x: 395
-            y: 412
-            width: 355
-            height: 52
-            bg_color: 0xDC2626
-            on_click:
-              - script.execute: cmd_stop_all
-            widgets:
               - label:
-                  align: CENTER
-                  text_color: 0xFFFFFF
-                  text: "STOP / ABORT AUTOTUNE"
+                  x: 435
+                  y: 80
+                  text_color: 0x94A3B8
+                  text: "PUMPS"
+              - button:
+                  id: btn_pmp_1
+                  x: 527
+                  y: 66
+                  width: 105
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "1 PMP"
+              - button:
+                  id: btn_pmp_2
+                  x: 640
+                  y: 66
+                  width: 105
+                  height: 44
+                  on_click:
+                    - lambda: 'id(num_pumps) = 2;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "2 PMP"
+
+              # Row 3: 230V Breaker / Fuse Limit
+              - label:
+                  x: 22
+                  y: 134
+                  text_color: 0x94A3B8
+                  text: "230V FUSE LIMIT"
+              - button:
+                  id: btn_amp_10
+                  x: 185
+                  y: 120
+                  width: 133
+                  height: 44
+                  on_click:
+                    - lambda: 'id(max_amps) = 10;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "10A (2.3kW)"
+              - button:
+                  id: btn_amp_13
+                  x: 327
+                  y: 120
+                  width: 133
+                  height: 44
+                  on_click:
+                    - lambda: 'id(max_amps) = 13;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "13A (3.0kW)"
+              - button:
+                  id: btn_amp_16
+                  x: 469
+                  y: 120
+                  width: 133
+                  height: 44
+                  on_click:
+                    - lambda: 'id(max_amps) = 16;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "16A (3.6kW)"
+              - button:
+                  id: btn_amp_0
+                  x: 612
+                  y: 120
+                  width: 133
+                  height: 44
+                  on_click:
+                    - lambda: 'id(max_amps) = 0;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "MAX / OFF"
+
+              # Row 4: Custom Pump Run / Rest Intervals
+              - label:
+                  x: 22
+                  y: 182
+                  text_color: 0x94A3B8
+                  text: "PUMP CYCLE"
+              - button:
+                  x: 185
+                  y: 172
+                  width: 48
+                  height: 38
+                  on_click:
+                    - lambda: 'if (id(pump_run_min) > 1) id(pump_run_min) -= 1;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-1m"
+              - button:
+                  x: 239
+                  y: 172
+                  width: 48
+                  height: 38
+                  on_click:
+                    - lambda: 'if (id(pump_run_min) < 30) id(pump_run_min) += 1;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+1m"
+              - label:
+                  id: lbl_pump_cycle_val
+                  x: 302
+                  y: 182
+                  text_color: 0x38BDF8
+                  text: "Run 10m / Rest 1m"
+              - button:
+                  x: 495
+                  y: 172
+                  width: 48
+                  height: 38
+                  on_click:
+                    - lambda: 'if (id(pump_rest_min) > 0) id(pump_rest_min) -= 1;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-1m"
+              - button:
+                  x: 549
+                  y: 172
+                  width: 48
+                  height: 38
+                  on_click:
+                    - lambda: 'if (id(pump_rest_min) < 10) id(pump_rest_min) += 1;'
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+1m"
+              - label:
+                  x: 610
+                  y: 182
+                  text_color: 0x64748B
+                  text: "(0m = cont.)"
+
+        # Card 2: PID Auto-Tune & Flash Storage (Sky Blue Accent)
+        - obj:
+            x: 20
+            y: 306
+            width: 760
+            height: 158
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - obj:
+                  x: 0
+                  y: 16
+                  width: 5
+                  height: 126
+                  bg_color: 0x38BDF8
+                  border_width: 0
+                  radius: 3
+              - label:
+                  x: 22
+                  y: 12
+                  text_color: 0x38BDF8
+                  text: "PID TEMPERATURE CONTROLLER & AUTO-TUNER"
+              - obj:
+                  id: autotune_banner
+                  x: 22
+                  y: 38
+                  width: 722
+                  height: 42
+                  bg_color: 0x1E293B
+                  border_width: 1
+                  border_color: 0x334155
+                  radius: 10
+                  scrollable: false
+                  pad_all: 0
+                  widgets:
+                    - label:
+                        id: lbl_autotune_banner
+                        align: CENTER
+                        text_color: 0xE2E8F0
+                        text: "PID TUNER: IDLE (Fill kettle with water before tuning)"
+
+              - button:
+                  id: btn_pid_autotune
+                  x: 22
+                  y: 90
+                  width: 265
+                  height: 52
+                  bg_color: 0x059669
+                  border_color: 0x34D399
+                  on_click:
+                    - lambda: |-
+                        if (std::isnan(id(kettle_temp).state)) {
+                          id(status_text) = "ERROR: NO KETTLE TEMP SENSOR!";
+                          lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0xDC2626), 0);
+                          lv_label_set_text(id(lbl_autotune_banner), "ERROR: NO KETTLE TEMP PROBE DETECTED!");
+                          return;
+                        }
+                        id(manual_htr_1) = false;
+                        id(manual_htr_2) = false;
+                        id(autotune_elapsed_sec) = 0;
+                        id(brew_state) = 5;
+                        id(pump_1).turn_on();
+                        if (id(num_pumps) == 2) id(pump_2).turn_on();
+                        id(status_text) = "PID AUTOTUNE IN PROGRESS (65 C)";
+                    - climate.control:
+                        id: bm_pid
+                        mode: HEAT
+                        target_temperature: 65°C
+                    - climate.pid.autotune: bm_pid
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xFFFFFF
+                        text: "START PID TUNE (65°C)"
+
+              - button:
+                  x: 299
+                  y: 90
+                  width: 215
+                  height: 52
+                  bg_color: 0x1D4ED8
+                  border_color: 0x3B82F6
+                  on_click:
+                    - script.execute: save_pid_gains
+                    - lambda: |-
+                        lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x1D4ED8), 0);
+                        lv_label_set_text(id(lbl_autotune_banner), "ACTIVE PID PARAMETERS SAVED TO FLASH!");
+                  on_long_press:
+                    - lambda: |-
+                        id(pid_kp) = 0.15f;
+                        id(pid_ki) = 0.002f;
+                        id(pid_kd) = 1.5f;
+                        id(bm_pid).set_kp(0.15f);
+                        id(bm_pid).set_ki(0.002f);
+                        id(bm_pid).set_kd(1.5f);
+                        lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x475569), 0);
+                        lv_label_set_text(id(lbl_autotune_banner), "PID RESET TO FACTORY DEFAULTS");
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xFFFFFF
+                        text: "SAVE PID (HOLD: RST)"
+
+              - button:
+                  x: 526
+                  y: 90
+                  width: 218
+                  height: 52
+                  bg_color: 0xDC2626
+                  border_color: 0xF87171
+                  on_click:
+                    - script.execute: cmd_stop_all
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xFFFFFF
+                        text: "STOP / ABORT"
+
     - id: recipe_page
-      bg_color: 0xF1F5F9
       widgets:
         - *home_btn
         - textarea:
             id: recipe_name_ta
-            x: 140
+            x: 135
             y: 10
             width: 645
             height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 12
+            text_color: 0xF8FAFC
             text: "Custom Braumeister Brew"
             placeholder_text: "Tap to rename recipe..."
             one_line: true
@@ -763,21 +1337,25 @@ lvgl:
 
         - tabview:
             id: recipe_tabs
-            x: 15
+            x: 20
             y: 62
-            width: 770
-            height: 405
-            bg_color: 0xFFFFFF
+            width: 760
+            height: 404
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            clip_corner: true
             tabs:
               - name: "MASH STEPS"
-                pad_all: 6
+                pad_all: 8
                 scrollable: false
                 widgets:
                   - obj:
-                      x: 6
-                      y: 6
-                      width: 265
-                      height: 256
+                      x: 4
+                      y: 4
+                      width: 262
+                      height: 248
                       bg_opa: TRANSP
                       border_width: 0
                       pad_all: 0
@@ -790,8 +1368,8 @@ lvgl:
                       widgets:
                         - button:
                             id: btn_sel_m1
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 1;'
                               - script.execute: update_recipe_highlights
@@ -803,8 +1381,8 @@ lvgl:
                                   text: "Step 1: 63C • 45m"
                         - button:
                             id: btn_sel_m2
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 2;'
                               - script.execute: update_recipe_highlights
@@ -816,8 +1394,8 @@ lvgl:
                                   text: "Step 2: 72C • 15m"
                         - button:
                             id: btn_sel_m3
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 3;'
                               - script.execute: update_recipe_highlights
@@ -829,8 +1407,8 @@ lvgl:
                                   text: "Step 3: 78C • 10m"
                         - button:
                             id: btn_sel_m4
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 4;'
                               - script.execute: update_recipe_highlights
@@ -842,8 +1420,8 @@ lvgl:
                                   text: "Step 4: 65C • 0m"
                         - button:
                             id: btn_sel_m5
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 5;'
                               - script.execute: update_recipe_highlights
@@ -855,8 +1433,8 @@ lvgl:
                                   text: "Step 5: 78C • 0m"
                         - button:
                             id: btn_sel_m6
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 6;'
                               - script.execute: update_recipe_highlights
@@ -868,8 +1446,8 @@ lvgl:
                                   text: "Step 6: 65C • 0m"
                         - button:
                             id: btn_sel_m7
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 7;'
                               - script.execute: update_recipe_highlights
@@ -881,8 +1459,8 @@ lvgl:
                                   text: "Step 7: 65C • 0m"
                         - button:
                             id: btn_sel_m8
-                            width: 252
-                            height: 46
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_mash_step) = 8;'
                               - script.execute: update_recipe_highlights
@@ -893,11 +1471,11 @@ lvgl:
                                   text_color: 0xFFFFFF
                                   text: "Step 8: 65C • 0m"
                   - button:
-                      x: 6
-                      y: 270
-                      width: 66
+                      x: 4
+                      y: 262
+                      width: 64
                       height: 44
-                      bg_color: 0x475569
+                      bg_color: 0x334155
                       on_click:
                         - lambda: |-
                             auto t = BM_TEMPS; auto m = BM_TIMES;
@@ -909,11 +1487,12 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "-STP"
                   - button:
-                      x: 77
-                      y: 270
-                      width: 66
+                      x: 74
+                      y: 262
+                      width: 64
                       height: 44
                       bg_color: 0x1D4ED8
+                      border_color: 0x3B82F6
                       on_click:
                         - lambda: |-
                             if (id(active_mash_steps) < 8) {
@@ -930,11 +1509,12 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "+STP"
                   - button:
-                      x: 148
-                      y: 270
-                      width: 58
+                      x: 144
+                      y: 262
+                      width: 56
                       height: 44
                       bg_color: 0x0F766E
+                      border_color: 0x14B8A6
                       on_click:
                         - lambda: |-
                             int s = id(editing_mash_step);
@@ -951,11 +1531,12 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "UP"
                   - button:
-                      x: 211
-                      y: 270
-                      width: 60
+                      x: 206
+                      y: 262
+                      width: 56
                       height: 44
                       bg_color: 0x0F766E
+                      border_color: 0x14B8A6
                       on_click:
                         - lambda: |-
                             int s = id(editing_mash_step);
@@ -971,33 +1552,42 @@ lvgl:
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "DN"
+                  # Mash Step Editor Card (Sky Blue Accent)
                   - obj:
-                      x: 285
-                      y: 6
-                      width: 455
-                      height: 308
-                      bg_color: 0xF8FAFC
+                      x: 278
+                      y: 4
+                      width: 460
+                      height: 302
+                      bg_color: 0x0B0F17
                       border_width: 1
-                      border_color: 0xCBD5E1
+                      border_color: 0x1F2937
                       radius: 12
                       scrollable: false
                       pad_all: 0
                       widgets:
+                        - obj:
+                            x: 0
+                            y: 18
+                            width: 5
+                            height: 266
+                            bg_color: 0x38BDF8
+                            border_width: 0
+                            radius: 3
                         - label:
                             id: lbl_edit_step_title
                             align: TOP_MID
                             y: 10
-                            text_color: 0x1D4ED8
+                            text_color: 0x38BDF8
                             text: "EDITING STEP 1"
                         - label:
-                            x: 14
-                            y: 44
-                            text_color: 0x475569
+                            x: 20
+                            y: 40
+                            text_color: 0x94A3B8
                             text: "TEMPERATURE"
                         - button:
                             <<: *step_slate
-                            x: 14
-                            y: 70
+                            x: 20
+                            y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -5.0f, 30.0f, 85.0f);'
                             widgets:
@@ -1007,8 +1597,8 @@ lvgl:
                                   text: "-5°"
                         - button:
                             <<: *step_dark
-                            x: 94
-                            y: 70
+                            x: 100
+                            y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -1.0f, 30.0f, 85.0f);'
                             widgets:
@@ -1019,14 +1609,14 @@ lvgl:
                         - label:
                             id: lbl_edit_step_temp
                             align: TOP_MID
-                            y: 88
+                            y: 84
                             text_font: montserrat_28
-                            text_color: 0x0F172A
+                            text_color: 0xF8FAFC
                             text: "63 °C"
                         - button:
                             <<: *step_dark
-                            x: 291
-                            y: 70
+                            x: 292
+                            y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 1.0f, 30.0f, 85.0f);'
                             widgets:
@@ -1036,8 +1626,8 @@ lvgl:
                                   text: "+1°"
                         - button:
                             <<: *step_slate
-                            x: 365
-                            y: 70
+                            x: 366
+                            y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 5.0f, 30.0f, 85.0f);'
                             widgets:
@@ -1045,15 +1635,22 @@ lvgl:
                                   align: CENTER
                                   text_color: 0xFFFFFF
                                   text: "+5°"
+                        - obj:
+                            x: 20
+                            y: 148
+                            width: 420
+                            height: 1
+                            bg_color: 0x1F2937
+                            border_width: 0
                         - label:
-                            x: 14
-                            y: 162
-                            text_color: 0x475569
+                            x: 20
+                            y: 160
+                            text_color: 0x94A3B8
                             text: "DURATION (MINUTES)"
                         - button:
                             <<: *step_slate
-                            x: 14
-                            y: 190
+                            x: 20
+                            y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -5, 0, 180);'
                             widgets:
@@ -1063,8 +1660,8 @@ lvgl:
                                   text: "-5m"
                         - button:
                             <<: *step_dark
-                            x: 94
-                            y: 190
+                            x: 100
+                            y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -1, 0, 180);'
                             widgets:
@@ -1075,14 +1672,14 @@ lvgl:
                         - label:
                             id: lbl_edit_step_time
                             align: TOP_MID
-                            y: 208
+                            y: 204
                             text_font: montserrat_28
-                            text_color: 0x0F172A
+                            text_color: 0xF8FAFC
                             text: "45m"
                         - button:
                             <<: *step_dark
-                            x: 291
-                            y: 190
+                            x: 292
+                            y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 1, 0, 180);'
                             widgets:
@@ -1092,8 +1689,8 @@ lvgl:
                                   text: "+1m"
                         - button:
                             <<: *step_slate
-                            x: 365
-                            y: 190
+                            x: 366
+                            y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 5, 0, 180);'
                             widgets:
@@ -1102,23 +1699,32 @@ lvgl:
                                   text_color: 0xFFFFFF
                                   text: "+5m"
               - name: "BOIL & HOPS"
-                pad_all: 6
+                pad_all: 8
                 scrollable: false
                 widgets:
+                  # Top Boil Control Strip (Amber Accent)
                   - obj:
-                      x: 6
+                      x: 4
                       y: 4
                       width: 734
                       height: 52
-                      bg_color: 0xF8FAFC
+                      bg_color: 0x0B0F17
                       border_width: 1
-                      border_color: 0xCBD5E1
-                      radius: 10
+                      border_color: 0x1F2937
+                      radius: 12
                       scrollable: false
                       pad_all: 0
                       widgets:
+                        - obj:
+                            x: 0
+                            y: 10
+                            width: 5
+                            height: 32
+                            bg_color: 0xF59E0B
+                            border_width: 0
+                            radius: 3
                         - button:
-                            x: 8
+                            x: 18
                             y: 6
                             width: 58
                             height: 38
@@ -1131,12 +1737,12 @@ lvgl:
                                   text: "-5m"
                         - label:
                             id: lbl_boil_time_val
-                            x: 78
+                            x: 88
                             y: 16
-                            text_color: 0x0F172A
+                            text_color: 0xFBBF24
                             text: "Boil: 60 min"
                         - button:
-                            x: 190
+                            x: 196
                             y: 6
                             width: 58
                             height: 38
@@ -1163,7 +1769,7 @@ lvgl:
                             id: lbl_boil_pwr_val
                             x: 482
                             y: 16
-                            text_color: 0x0F172A
+                            text_color: 0xFBBF24
                             text: "Power: 85%"
                         - button:
                             x: 595
@@ -1177,12 +1783,12 @@ lvgl:
                                   align: CENTER
                                   text_color: 0xFFFFFF
                                   text: "+5%"
-
+                  # Scrollable Hops List
                   - obj:
-                      x: 6
+                      x: 4
                       y: 64
-                      width: 265
-                      height: 204
+                      width: 262
+                      height: 196
                       bg_opa: TRANSP
                       border_width: 0
                       pad_all: 0
@@ -1195,8 +1801,8 @@ lvgl:
                       widgets:
                         - button:
                             id: btn_sel_h1
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 1;'
                               - script.execute: update_recipe_highlights
@@ -1208,8 +1814,8 @@ lvgl:
                                   text: "Hop 1: 60 min"
                         - button:
                             id: btn_sel_h2
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 2;'
                               - script.execute: update_recipe_highlights
@@ -1221,8 +1827,8 @@ lvgl:
                                   text: "Hop 2: 15 min"
                         - button:
                             id: btn_sel_h3
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 3;'
                               - script.execute: update_recipe_highlights
@@ -1234,8 +1840,8 @@ lvgl:
                                   text: "Hop 3: 0 min"
                         - button:
                             id: btn_sel_h4
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 4;'
                               - script.execute: update_recipe_highlights
@@ -1247,8 +1853,8 @@ lvgl:
                                   text: "Hop 4: 0 min"
                         - button:
                             id: btn_sel_h5
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 5;'
                               - script.execute: update_recipe_highlights
@@ -1260,8 +1866,8 @@ lvgl:
                                   text: "Hop 5: 0 min"
                         - button:
                             id: btn_sel_h6
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 6;'
                               - script.execute: update_recipe_highlights
@@ -1273,8 +1879,8 @@ lvgl:
                                   text: "Hop 6: 0 min"
                         - button:
                             id: btn_sel_h7
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 7;'
                               - script.execute: update_recipe_highlights
@@ -1286,8 +1892,8 @@ lvgl:
                                   text: "Hop 7: 0 min"
                         - button:
                             id: btn_sel_h8
-                            width: 252
-                            height: 45
+                            width: 248
+                            height: 44
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 8;'
                               - script.execute: update_recipe_highlights
@@ -1299,11 +1905,11 @@ lvgl:
                                   text: "Hop 8: 0 min"
 
                   - button:
-                      x: 6
-                      y: 276
-                      width: 128
+                      x: 4
+                      y: 266
+                      width: 126
                       height: 40
-                      bg_color: 0x475569
+                      bg_color: 0x334155
                       on_click:
                         - lambda: 'auto h = BM_HOPS; bm_del_hop(h, id(active_hop_count), id(editing_hop_idx));'
                         - script.execute: update_recipe_highlights
@@ -1313,11 +1919,12 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "- HOP"
                   - button:
-                      x: 143
-                      y: 276
-                      width: 128
+                      x: 138
+                      y: 266
+                      width: 126
                       height: 40
                       bg_color: 0x1D4ED8
+                      border_color: 0x3B82F6
                       on_click:
                         - lambda: |-
                             if (id(active_hop_count) < 8) {
@@ -1330,30 +1937,39 @@ lvgl:
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "+ HOP"
+                  # Hop Addition Time Editor Card (Emerald Accent)
                   - obj:
-                      x: 285
-                      y: 66
-                      width: 455
-                      height: 250
-                      bg_color: 0xF8FAFC
+                      x: 278
+                      y: 64
+                      width: 460
+                      height: 242
+                      bg_color: 0x0B0F17
                       border_width: 1
-                      border_color: 0xCBD5E1
+                      border_color: 0x1F2937
                       radius: 12
                       scrollable: false
                       pad_all: 0
                       widgets:
+                        - obj:
+                            x: 0
+                            y: 18
+                            width: 5
+                            height: 206
+                            bg_color: 0x34D399
+                            border_width: 0
+                            radius: 3
                         - label:
                             id: lbl_edit_hop_title
                             align: TOP_MID
                             y: 18
-                            text_color: 0x1D4ED8
+                            text_color: 0x34D399
                             text: "HOP 1 ADDITION TIME"
                         - button:
                             width: 74
                             height: 80
                             bg_color: 0x334155
-                            x: 14
-                            y: 90
+                            x: 20
+                            y: 84
                             on_click:
                               - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), -5, 0, 120);'
                             widgets:
@@ -1365,8 +1981,8 @@ lvgl:
                             width: 68
                             height: 80
                             bg_color: 0x1E293B
-                            x: 94
-                            y: 90
+                            x: 100
+                            y: 84
                             on_click:
                               - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), -1, 0, 120);'
                             widgets:
@@ -1377,16 +1993,16 @@ lvgl:
                         - label:
                             id: lbl_edit_hop_time
                             align: TOP_MID
-                            y: 114
+                            y: 108
                             text_font: montserrat_28
-                            text_color: 0x0F172A
+                            text_color: 0xF8FAFC
                             text: "60m"
                         - button:
                             width: 68
                             height: 80
                             bg_color: 0x1E293B
-                            x: 291
-                            y: 90
+                            x: 292
+                            y: 84
                             on_click:
                               - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), 1, 0, 120);'
                             widgets:
@@ -1398,8 +2014,8 @@ lvgl:
                             width: 74
                             height: 80
                             bg_color: 0x334155
-                            x: 365
-                            y: 90
+                            x: 366
+                            y: 84
                             on_click:
                               - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), 5, 0, 120);'
                             widgets:
@@ -1408,15 +2024,15 @@ lvgl:
                                   text_color: 0xFFFFFF
                                   text: "+5m"
               - name: "SAVED SLOTS"
-                pad_all: 6
+                pad_all: 8
                 scrollable: false
                 widgets:
                   - button:
                       id: btn_slot_1
                       x: 10
-                      y: 12
-                      width: 350
-                      height: 55
+                      y: 10
+                      width: 355
+                      height: 56
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 1;'
@@ -1428,10 +2044,10 @@ lvgl:
                             text: "Slot 1: German Pilsner"
                   - button:
                       id: btn_slot_2
-                      x: 380
-                      y: 12
-                      width: 350
-                      height: 55
+                      x: 377
+                      y: 10
+                      width: 355
+                      height: 56
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 2;'
@@ -1444,9 +2060,9 @@ lvgl:
                   - button:
                       id: btn_slot_3
                       x: 10
-                      y: 80
-                      width: 350
-                      height: 55
+                      y: 78
+                      width: 355
+                      height: 56
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 3;'
@@ -1458,10 +2074,10 @@ lvgl:
                             text: "Slot 3: Hefeweizen"
                   - button:
                       id: btn_slot_4
-                      x: 380
-                      y: 80
-                      width: 350
-                      height: 55
+                      x: 377
+                      y: 78
+                      width: 355
+                      height: 56
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 4;'
@@ -1473,16 +2089,16 @@ lvgl:
                             text: "Slot 4: Empty Preset"
                   - label:
                       id: lbl_slot_selected
-                      x: 10
-                      y: 158
-                      text_color: 0x0F172A
+                      x: 14
+                      y: 156
+                      text_color: 0xA78BFA
                       text: "Selected: Slot 1"
                   - button:
-                      x: 530
-                      y: 148
+                      x: 532
+                      y: 146
                       width: 200
                       height: 38
-                      bg_color: 0x475569
+                      bg_color: 0x334155
                       on_click:
                         - lambda: |-
                             id(slot1_name) = "Slot 1: German Pilsner";
@@ -1503,9 +2119,12 @@ lvgl:
                   - button:
                       x: 10
                       y: 196
-                      width: 350
-                      height: 75
+                      width: 355
+                      height: 82
                       bg_color: 0x059669
+                      border_width: 2
+                      border_color: 0x34D399
+                      radius: 14
                       on_click:
                         - script.execute: load_from_selected_slot
                         - lambda: 'id(status_text) = "LOADED: " + id(recipe_name);'
@@ -1515,11 +2134,14 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "LOAD SELECTED RECIPE"
                   - button:
-                      x: 380
+                      x: 377
                       y: 196
-                      width: 350
-                      height: 75
+                      width: 355
+                      height: 82
                       bg_color: 0x1D4ED8
+                      border_width: 2
+                      border_color: 0x3B82F6
+                      radius: 14
                       on_click:
                         - lambda: 'id(recipe_name) = lv_textarea_get_text(id(recipe_name_ta));'
                         - script.execute: save_to_selected_slot
@@ -1530,34 +2152,54 @@ lvgl:
                             text_color: 0xFFFFFF
                             text: "SAVE CURRENT TO SLOT"
               - name: "BEERXML"
-                pad_all: 6
+                pad_all: 8
                 scrollable: false
                 widgets:
-                  - label:
-                      x: 15
-                      y: 18
-                      text_color: 0x1D4ED8
-                      text: "IMPORT BEERXML RECIPE OVER WI-FI:"
-                  - label:
-                      x: 15
-                      y: 56
-                      text_color: 0x0F172A
-                      text: "1. Find your controller IP address on the Wi-Fi Settings page."
-                  - label:
-                      x: 15
-                      y: 90
-                      text_color: 0x0F172A
-                      text: "2. Open http://<IP-ADDRESS>/import in your browser."
-                  - label:
-                      x: 15
-                      y: 124
-                      text_color: 0x0F172A
-                      text: "3. Select your .xml file (Brewfather, BeerSmith, Grainfather)"
-                  - label:
-                      x: 15
-                      y: 158
-                      text_color: 0x0F172A
-                      text: "   and click Upload & Load Recipe. Then save to a slot!"
+                  - obj:
+                      x: 10
+                      y: 12
+                      width: 722
+                      height: 266
+                      bg_color: 0x0B0F17
+                      border_width: 1
+                      border_color: 0x1F2937
+                      radius: 12
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - obj:
+                            x: 0
+                            y: 20
+                            width: 5
+                            height: 226
+                            bg_color: 0x38BDF8
+                            border_width: 0
+                            radius: 3
+                        - label:
+                            x: 24
+                            y: 22
+                            text_color: 0x38BDF8
+                            text: "IMPORT BEERXML RECIPE OVER WI-FI"
+                        - label:
+                            x: 24
+                            y: 66
+                            text_color: 0xCBD5E1
+                            text: "1. Find your controller IP address on the Wi-Fi Settings page."
+                        - label:
+                            x: 24
+                            y: 106
+                            text_color: 0xCBD5E1
+                            text: "2. Open http://<IP-ADDRESS>/import in your browser."
+                        - label:
+                            x: 24
+                            y: 146
+                            text_color: 0xCBD5E1
+                            text: "3. Select your .xml file (Brewfather, BeerSmith, Grainfather)"
+                        - label:
+                            x: 24
+                            y: 186
+                            text_color: 0xCBD5E1
+                            text: "   and click Upload & Load Recipe. Then save to a slot!"
 
         - keyboard:
             id: recipe_kb
@@ -1565,104 +2207,187 @@ lvgl:
             width: 800
             height: 235
             hidden: true
+
     - id: wifi_page
       widgets:
         - *home_btn
         - label:
             x: 140
             y: 12
-            text: "WIFI SETTINGS (2.4 GHz)"
+            text_font: montserrat_20
+            text_color: 0xF8FAFC
+            text: "WIFI & WEB DASHBOARD"
         - label:
             id: wifi_conn_info
             x: 140
-            y: 34
+            y: 38
             text_color: 0xF59E0B
             text: "Status: Checking connection..."
+
+        # Left Card: Network & Web Importer Status
+        - obj:
+            x: 20
+            y: 72
+            width: 320
+            height: 152
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - obj:
+                  x: 0
+                  y: 16
+                  width: 5
+                  height: 120
+                  bg_color: 0x8B5CF6
+                  border_width: 0
+                  radius: 3
+              - label:
+                  x: 18
+                  y: 14
+                  text_color: 0xA78BFA
+                  text: "WEB INTERFACE & BEERXML"
+              - label:
+                  x: 18
+                  y: 44
+                  text_color: 0x94A3B8
+                  text: "Open in browser on same Wi-Fi:"
+              - label:
+                  id: wifi_web_url
+                  x: 18
+                  y: 68
+                  text_color: 0x38BDF8
+                  text: "http://192.168.4"
+              - label:
+                  x: 18
+                  y: 102
+                  text_color: 0x64748B
+                  text: "Fallback AP: BM-BrewController"
+
+        # Right Card: 2.4 GHz Network Selector & Credentials
+        - obj:
+            x: 355
+            y: 72
+            width: 425
+            height: 152
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - button:
+                  x: 14
+                  y: 14
+                  width: 110
+                  height: 46
+                  bg_color: 0x1D4ED8
+                  border_color: 0x3B82F6
+                  on_click:
+                    - lambda: |-
+                        lv_label_set_text(id(wifi_conn_info), "Scanning for 2.4 GHz networks...");
+                        wifi_scan_config_t scan_config = {};
+                        scan_config.show_hidden = false;
+                        if (esp_wifi_scan_start(&scan_config, true) == ESP_OK) {
+                          uint16_t ap_count = 0;
+                          esp_wifi_scan_get_ap_num(&ap_count);
+                          if (ap_count > 15) ap_count = 15;
+                          if (ap_count > 0) {
+                            std::vector<wifi_ap_record_t> ap_list(ap_count);
+                            if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
+                              std::string opts = "";
+                              for (int i = 0; i < ap_count; i++) {
+                                std::string ssid_str(reinterpret_cast<const char*>(ap_list.at(i).ssid));
+                                if (!ssid_str.empty()) {
+                                  if (!opts.empty()) opts += "\n";
+                                  opts += ssid_str;
+                                }
+                              }
+                              if (!opts.empty()) {
+                                lv_dropdown_set_options(id(wifi_ssid_dd)->obj, opts.c_str());
+                                lv_label_set_text(id(wifi_conn_info), ("Found " + std::to_string(ap_count) + " network(s)").c_str());
+                              }
+                            }
+                          } else {
+                            lv_label_set_text(id(wifi_conn_info), "No 2.4 GHz networks found");
+                          }
+                        } else {
+                          lv_label_set_text(id(wifi_conn_info), "Scan failed - try again");
+                        }
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "SCAN"
+              - dropdown:
+                  id: wifi_ssid_dd
+                  x: 134
+                  y: 14
+                  width: 277
+                  height: 46
+                  options:
+                    - "Tap SCAN to find Wi-Fi"
+              - textarea:
+                  id: wifi_pass_ta
+                  x: 14
+                  y: 74
+                  width: 225
+                  height: 52
+                  placeholder_text: "Wi-Fi Password"
+                  password_mode: true
+                  one_line: true
+                  on_click:
+                    - lvgl.keyboard.update:
+                        id: on_screen_kb
+                        textarea: wifi_pass_ta
+                    - lvgl.widget.show: on_screen_kb
+                  on_ready:
+                    - lvgl.widget.hide: on_screen_kb
+              - button:
+                  id: btn_wifi_eye
+                  x: 247
+                  y: 74
+                  width: 68
+                  height: 52
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: |-
+                        bool cur = lv_textarea_get_password_mode(id(wifi_pass_ta));
+                        lv_textarea_set_password_mode(id(wifi_pass_ta), !cur);
+                        lv_label_set_text(id(lbl_wifi_eye), cur ? "HIDE" : "SHOW");
+                  widgets:
+                    - label:
+                        id: lbl_wifi_eye
+                        align: CENTER
+                        text: "SHOW"
+              - button:
+                  x: 323
+                  y: 74
+                  width: 88
+                  height: 52
+                  bg_color: 0x059669
+                  border_color: 0x34D399
+                  on_click:
+                    - lambda: |-
+                        std::vector<char> selected_ssid(64, 0);
+                        lv_dropdown_get_selected_str(id(wifi_ssid_dd)->obj, selected_ssid.data(), selected_ssid.size());
+                        const char *pass = lv_textarea_get_text(id(wifi_pass_ta));
+                        if (std::string(selected_ssid.data()) != "Tap SCAN to find Wi-Fi") {
+                          id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
+                          lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
+                          delay(500);
+                          App.safe_reboot();
+                        }
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "SAVE"
+
         - keyboard:
             id: on_screen_kb
             align: BOTTOM_MID
             width: 800
-            height: 245
-        - button:
-            x: 20
-            y: 68
-            width: 130
-            height: 48
-            bg_color: 0x1D4ED8
-            on_click:
-              - lambda: |-
-                  lv_label_set_text(id(wifi_conn_info), "Scanning for 2.4 GHz networks...");
-                  wifi_scan_config_t scan_config = {};
-                  scan_config.show_hidden = false;
-                  if (esp_wifi_scan_start(&scan_config, true) == ESP_OK) {
-                    uint16_t ap_count = 0;
-                    esp_wifi_scan_get_ap_num(&ap_count);
-                    if (ap_count > 15) ap_count = 15;
-                    if (ap_count > 0) {
-                      std::vector<wifi_ap_record_t> ap_list(ap_count);
-                      if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
-                        std::string opts = "";
-                        for (int i = 0; i < ap_count; i++) {
-                          std::string ssid_str(reinterpret_cast<const char*>(ap_list.at(i).ssid));
-                          if (!ssid_str.empty()) {
-                            if (!opts.empty()) opts += "\n";
-                            opts += ssid_str;
-                          }
-                        }
-                        if (!opts.empty()) {
-                          lv_dropdown_set_options(id(wifi_ssid_dd)->obj, opts.c_str());
-                          lv_label_set_text(id(wifi_conn_info), ("Found " + std::to_string(ap_count) + " network(s)").c_str());
-                        }
-                      }
-                    } else {
-                      lv_label_set_text(id(wifi_conn_info), "No 2.4 GHz networks found");
-                    }
-                  } else {
-                    lv_label_set_text(id(wifi_conn_info), "Scan failed - try again");
-                  }
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "SCAN"
-        - dropdown:
-            id: wifi_ssid_dd
-            x: 160
-            y: 68
-            width: 320
-            height: 48
-            options:
-              - "Tap SCAN to find Wi-Fi"
-        - textarea:
-            id: wifi_pass_ta
-            x: 490
-            y: 68
-            width: 290
-            height: 48
-            placeholder_text: "Wi-Fi Password"
-            password_mode: true
-            one_line: true
-            on_click:
-              - lvgl.keyboard.update:
-                  id: on_screen_kb
-                  textarea: wifi_pass_ta
-        - button:
-            x: 20
-            y: 128
-            width: 260
-            height: 48
-            bg_color: 0x059669
-            on_click:
-              - lambda: |-
-                  std::vector<char> selected_ssid(64, 0);
-                  lv_dropdown_get_selected_str(id(wifi_ssid_dd)->obj, selected_ssid.data(), selected_ssid.size());
-                  const char *pass = lv_textarea_get_text(id(wifi_pass_ta));
-                  if (std::string(selected_ssid.data()) != "Tap SCAN to find Wi-Fi") {
-                    id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
-                    lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
-                    delay(500);
-                    App.safe_reboot();
-                  }
-            widgets:
-              - label:
-                  align: CENTER
-                  text: "SAVE & CONNECT"
+            height: 242
