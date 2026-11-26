@@ -1,0 +1,1633 @@
+.anchors:
+  home_btn: &home_btn
+    button:
+      x: 15
+      y: 10
+      width: 110
+      height: 44
+      bg_color: 0x1E293B
+      radius: 10
+      on_click:
+        - lvgl.page.show:
+            id: home_page
+            animation: NONE
+      widgets:
+        - label:
+            align: CENTER
+            text_color: 0xFFFFFF
+            text: "< HOME"
+  hw_btn: &hw_btn
+    width: 170
+    height: 50
+  step_slate: &step_slate
+    width: 74
+    height: 68
+    bg_color: 0x334155
+  step_dark: &step_dark
+    width: 68
+    height: 68
+    bg_color: 0x1E293B
+
+lvgl:
+  displays:
+    - my_display
+  touchscreens:
+    - my_touchscreen
+  buffer_size: 100%
+  theme:
+    page:
+      bg_color: 0x0B0F17
+    button:
+      bg_color: 0x1E293B
+      border_width: 1
+      border_color: 0x334155
+      radius: 12
+      pressed:
+        bg_color: 0x0F172A
+        translate_y: 2
+    tabview:
+      bg_color: 0x0B0F17
+  pages:
+    - id: home_page
+      widgets:
+        - obj:
+            x: 25
+            y: 10
+            width: 245
+            height: 38
+            bg_color: 0x1E293B
+            border_width: 2
+            border_color: 0x000000
+            radius: 8
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  align: CENTER
+                  text_color: 0xFACC15
+                  text: "BRAUMEISTER PRO"
+        - label:
+            id: home_wifi_lbl
+            align: TOP_RIGHT
+            x: -25
+            y: 18
+            text_color: 0xF59E0B
+            text: "WIFI: CHECKING..."
+        - label:
+            id: home_hw_badge
+            x: 25
+            y: 55
+            text_color: 0x94A3B8
+            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+
+        - button:
+            x: 25
+            y: 92
+            width: 365
+            height: 175
+            bg_color: 0x065F46
+            border_color: 0x10B981
+            radius: 16
+            on_click:
+              - lvgl.page.show:
+                  id: brew_page
+                  animation: NONE
+            widgets:
+              - label:
+                  align: CENTER
+                  y: -14
+                  text_font: montserrat_28
+                  text: "BREW SESSION"
+              - label:
+                  align: CENTER
+                  y: 24
+                  text_color: 0xA7F3D0
+                  text: "Mash, Boil & Manual Control"
+
+        - button:
+            x: 410
+            y: 92
+            width: 365
+            height: 175
+            bg_color: 0x1E3A8A
+            border_color: 0x3B82F6
+            radius: 16
+            on_click:
+              - lvgl.page.show:
+                  id: recipe_page
+                  animation: NONE
+            widgets:
+              - label:
+                  align: CENTER
+                  y: -14
+                  text_font: montserrat_28
+                  text: "RECIPE BUILDER"
+              - label:
+                  align: CENTER
+                  y: 24
+                  text_color: 0xBFDBFE
+                  text: "8-Step Mash, Hops & Slots"
+
+        - button:
+            x: 25
+            y: 285
+            width: 365
+            height: 175
+            bg_color: 0x1E293B
+            border_color: 0x475569
+            radius: 16
+            on_click:
+              - lvgl.page.show:
+                  id: hardware_page
+                  animation: NONE
+            widgets:
+              - label:
+                  align: CENTER
+                  y: -14
+                  text_font: montserrat_28
+                  text: "HARDWARE SETUP"
+              - label:
+                  align: CENTER
+                  y: 24
+                  text_color: 0xCBD5E1
+                  text: "Model, Fuse Limit & PID Tune"
+
+        - button:
+            x: 410
+            y: 285
+            width: 365
+            height: 175
+            bg_color: 0x4C1D95
+            border_color: 0x8B5CF6
+            radius: 16
+            on_click:
+              - lvgl.page.show:
+                  id: wifi_page
+                  animation: NONE
+            widgets:
+              - label:
+                  align: CENTER
+                  y: -14
+                  text_font: montserrat_28
+                  text: "WIFI SETTINGS"
+              - label:
+                  align: CENTER
+                  y: 24
+                  text_color: 0xDDD6FE
+                  text: "Scan & Connect 2.4 GHz"
+    - id: brew_page
+      widgets:
+        - *home_btn
+        - label:
+            id: lvgl_status_lbl
+            x: 140
+            y: 10
+            text_color: 0xF8FAFC
+            text: "IDLE - READY TO BREW"
+        - label:
+            id: lvgl_wifi_lbl
+            align: TOP_RIGHT
+            x: -15
+            y: 10
+            text_color: 0xF59E0B
+            text: "WIFI: CHECKING..."
+        - label:
+            id: lbl_brew_recipe
+            align: TOP_RIGHT
+            x: -15
+            y: 34
+            text_color: 0x38BDF8
+            text: "Recipe: Custom Braumeister Brew"
+        - label:
+            id: lvgl_hw_badge
+            x: 140
+            y: 34
+            text_color: 0x94A3B8
+            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+
+        - obj:
+            x: 20
+            y: 66
+            width: 245
+            height: 192
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - arc:
+                  id: arc_kettle_temp
+                  align: CENTER
+                  y: 10
+                  width: 146
+                  height: 146
+                  min_value: 20
+                  max_value: 100
+                  value: 20
+                  adjustable: false
+                  arc_width: 12
+                  arc_color: 0x1E293B
+                  indicator:
+                    arc_width: 12
+                    arc_color: 0xF59E0B
+              - label:
+                  align: TOP_MID
+                  y: 8
+                  text_color: 0x94A3B8
+                  text: "KETTLE"
+              - label:
+                  id: lbl_kettle_temp
+                  align: CENTER
+                  y: 10
+                  text_font: montserrat_28
+                  text_color: 0xF8FAFC
+                  text: "--.- C"
+
+        - obj:
+            x: 280
+            y: 66
+            width: 245
+            height: 192
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  align: TOP_MID
+                  y: 14
+                  text_color: 0x94A3B8
+                  text: "TARGET TEMP"
+              - label:
+                  id: lbl_target_temp
+                  align: CENTER
+                  y: 6
+                  text_font: montserrat_28
+                  text_color: 0x38BDF8
+                  text: "63.0 C"
+              - label:
+                  id: lbl_step_badge
+                  align: BOTTOM_MID
+                  y: -14
+                  text_color: 0x94A3B8
+                  text: "Ready: Step 1 of 3"
+
+        - obj:
+            x: 540
+            y: 66
+            width: 240
+            height: 192
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x1F2937
+            radius: 14
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  align: TOP_MID
+                  y: 14
+                  text_color: 0x94A3B8
+                  text: "STEP TIMER"
+              - label:
+                  id: lbl_timer
+                  align: CENTER
+                  y: 6
+                  text_font: montserrat_28
+                  text_color: 0x34D399
+                  text: "00:00"
+              - label:
+                  id: lbl_sec_temp
+                  align: BOTTOM_MID
+                  y: -14
+                  text_color: 0x94A3B8
+                  text: "Aux: --.- C"
+        - button:
+            id: pill_htr1
+            x: 20
+            y: 272
+            width: 180
+            height: 54
+            bg_color: 0x1E293B
+            radius: 27
+            on_click:
+              - lambda: |-
+                  if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); id(manual_htr_2) = false; }
+                  id(manual_htr_1) = !id(manual_htr_1);
+                  if (id(manual_htr_1) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_2) = false;
+                  id(heater_1_pwm).set_level(id(manual_htr_1) ? 1.0f : 0.0f);
+                  id(heater_2_pwm).set_level((id(num_elements) == 2 && id(manual_htr_2)) ? 1.0f : 0.0f);
+                  id(status_text) = "MANUAL OVERRIDE";
+            widgets:
+              - label:
+                  id: lbl_pill_htr1
+                  align: CENTER
+                  text_color: 0xE2E8F0
+                  text: "HTR 1: OFF"
+
+        - button:
+            id: pill_htr2
+            x: 213
+            y: 272
+            width: 180
+            height: 54
+            bg_color: 0x1E293B
+            radius: 27
+            on_click:
+              - lambda: |-
+                  if (id(num_elements) != 2) return;
+                  if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); id(manual_htr_1) = false; }
+                  id(manual_htr_2) = !id(manual_htr_2);
+                  if (id(manual_htr_2) && id(max_amps) > 0 && id(max_amps) <= 13) id(manual_htr_1) = false;
+                  id(heater_1_pwm).set_level(id(manual_htr_1) ? 1.0f : 0.0f);
+                  id(heater_2_pwm).set_level(id(manual_htr_2) ? 1.0f : 0.0f);
+                  id(status_text) = "MANUAL OVERRIDE";
+            widgets:
+              - label:
+                  id: lbl_pill_htr2
+                  align: CENTER
+                  text_color: 0xE2E8F0
+                  text: "HTR 2: OFF"
+
+        - button:
+            id: pill_pump1
+            x: 407
+            y: 272
+            width: 180
+            height: 54
+            bg_color: 0x1E293B
+            radius: 27
+            on_click:
+              - lambda: |-
+                  if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
+                  id(pump_1).toggle();
+                  id(status_text) = "MANUAL OVERRIDE";
+                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
+                  id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+                  return;
+                  }
+
+            widgets:
+              - label:
+                  id: lbl_pill_pump1
+                  align: CENTER
+                  text_color: 0xE2E8F0
+                  text: "PUMP 1: OFF"
+
+        - button:
+            id: pill_pump2
+            x: 600
+            y: 272
+            width: 180
+            height: 54
+            bg_color: 0x1E293B
+            radius: 27
+            on_click:
+              - lambda: |-
+                  if (id(num_pumps) != 2) return;
+                  if (id(brew_state) != 0) { id(brew_state) = 0; auto c = id(bm_pid).make_call(); c.set_mode("OFF"); c.perform(); }
+                  id(pump_2).toggle();
+                  id(status_text) = "MANUAL OVERRIDE";
+                  if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 88.0f) {
+                  id(status_text) = "PUMP LOCKOUT: TEMP >= 88C";
+                  return;
+                  }
+            widgets:
+              - label:
+                  id: lbl_pill_pump2
+                  align: CENTER
+                  text_color: 0xE2E8F0
+                  text: "PUMP 2: OFF"
+        - button:
+            x: 20
+            y: 344
+            width: 245
+            height: 112
+            bg_color: 0x059669
+            border_color: 0x34D399
+            radius: 14
+            on_click:
+              - script.execute: cmd_start_brew
+            widgets:
+              - label:
+                  align: CENTER
+                  text_font: montserrat_28
+                  text: "START"
+
+        - button:
+            x: 280
+            y: 344
+            width: 245
+            height: 112
+            bg_color: 0xDC2626
+            border_color: 0xF87171
+            radius: 14
+            on_click:
+              - script.execute: cmd_stop_all
+            widgets:
+              - label:
+                  align: CENTER
+                  text_font: montserrat_28
+                  text: "STOP"
+
+        - button:
+            x: 540
+            y: 344
+            width: 240
+            height: 112
+            bg_color: 0xD97706
+            border_color: 0xFBBF24
+            radius: 14
+            on_click:
+              - script.execute: cmd_start_boil
+            widgets:
+              - label:
+                  align: CENTER
+                  text_font: montserrat_28
+                  text: "BOIL"
+
+        - obj:
+            id: step_confirm_modal
+            align: CENTER
+            width: 560
+            height: 250
+            bg_color: 0x0F172A
+            border_width: 3
+            border_color: 0xF59E0B
+            radius: 16
+            hidden: true
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  id: lbl_modal_title
+                  align: TOP_MID
+                  y: 22
+                  text_font: montserrat_28
+                  text_color: 0xFACC15
+                  text: "STEP 1 COMPLETE!"
+              - label:
+                  id: lbl_modal_body
+                  align: CENTER
+                  y: -12
+                  text_color: 0xF8FAFC
+                  text: "Check mash / stir, then tap CONTINUE"
+              - button:
+                  x: 130
+                  y: 162
+                  width: 300
+                  height: 64
+                  bg_color: 0x059669
+                  border_color: 0x34D399
+                  radius: 12
+                  on_click:
+                    - script.execute: cmd_confirm_step
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_font: montserrat_28
+                        text_color: 0xFFFFFF
+                        text: "CONTINUE"
+    - id: hardware_page
+      widgets:
+        - *home_btn
+        - label:
+            x: 140
+            y: 20
+            text_color: 0x0F172A
+            text: "BRAUMEISTER HARDWARE CONFIGURATION"
+
+        - label:
+            x: 25
+            y: 78
+            text_color: 0x0F172A
+            text: "Model Preset:"
+        - button:
+            <<: *hw_btn
+            x: 220
+            y: 66
+            on_click:
+              - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(pump_2).turn_off();'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "BM10 / BM20"
+        - button:
+            <<: *hw_btn
+            x: 405
+            y: 66
+            on_click:
+              - lambda: 'id(num_elements) = 2; id(num_pumps) = 2;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "BM50"
+
+        - label:
+            x: 25
+            y: 148
+            text_color: 0x0F172A
+            text: "Heating Elements:"
+        - button:
+            <<: *hw_btn
+            x: 220
+            y: 136
+            on_click:
+              - lambda: 'id(num_elements) = 1;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "1 ELEMENT"
+        - button:
+            <<: *hw_btn
+            x: 405
+            y: 136
+            on_click:
+              - lambda: 'id(num_elements) = 2;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "2 ELEMENTS"
+
+        - label:
+            x: 25
+            y: 218
+            text_color: 0x0F172A
+            text: "Circulation Pumps:"
+        - button:
+            <<: *hw_btn
+            x: 220
+            y: 206
+            on_click:
+              - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "1 PUMP"
+        - button:
+            <<: *hw_btn
+            x: 405
+            y: 206
+            on_click:
+              - lambda: 'id(num_pumps) = 2;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "2 PUMPS"
+        - label:
+            x: 25
+            y: 288
+            text_color: 0x0F172A
+            text: "230V Fuse Limit:"
+        - button:
+            id: btn_amp_10
+            x: 220
+            y: 276
+            width: 125
+            height: 50
+            on_click:
+              - lambda: 'id(max_amps) = 10;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "10A (2.3kW)"
+        - button:
+            id: btn_amp_13
+            x: 355
+            y: 276
+            width: 125
+            height: 50
+            on_click:
+              - lambda: 'id(max_amps) = 13;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "13A (3.0kW)"
+        - button:
+            id: btn_amp_16
+            x: 490
+            y: 276
+            width: 125
+            height: 50
+            on_click:
+              - lambda: 'id(max_amps) = 16;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "16A (3.6kW)"
+        - button:
+            id: btn_amp_0
+            x: 625
+            y: 276
+            width: 125
+            height: 50
+            on_click:
+              - lambda: 'id(max_amps) = 0;'
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "MAX / OFF"
+
+        - label:
+            id: hw_page_status
+            x: 25
+            y: 332
+            text_color: 0x1D4ED8
+            text: "CONFIG: 2 EL | 2 PUMP | 16A"
+
+        - obj:
+            id: autotune_banner
+            x: 25
+            y: 360
+            width: 725
+            height: 44
+            bg_color: 0x1E293B
+            border_width: 1
+            border_color: 0x334155
+            radius: 10
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - label:
+                  id: lbl_autotune_banner
+                  align: CENTER
+                  text_color: 0xE2E8F0
+                  text: "PID TUNER: IDLE (Fill kettle with water before tuning)"
+
+        - button:
+            id: btn_pid_autotune
+            x: 25
+            y: 412
+            width: 355
+            height: 52
+            bg_color: 0x059669
+            on_click:
+              - lambda: |-
+                  if (std::isnan(id(kettle_temp).state)) {
+                    id(status_text) = "ERROR: NO KETTLE TEMP SENSOR!";
+                    lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0xDC2626), 0);
+                    lv_label_set_text(id(lbl_autotune_banner), "ERROR: NO KETTLE TEMP PROBE DETECTED!");
+                    return;
+                  }
+                  id(manual_htr_1) = false;
+                  id(manual_htr_2) = false;
+                  id(autotune_elapsed_sec) = 0;
+                  id(brew_state) = 5;
+                  id(pump_1).turn_on();
+                  if (id(num_pumps) == 2) id(pump_2).turn_on();
+                  id(status_text) = "PID AUTOTUNE IN PROGRESS (65 C)";
+              - climate.control:
+                  id: bm_pid
+                  mode: HEAT
+                  target_temperature: 65°C
+              - climate.pid.autotune: bm_pid
+            widgets:
+              - label:
+                  align: CENTER
+                  text_color: 0xFFFFFF
+                  text: "START PID AUTOTUNE (65°C)"
+
+        - button:
+            x: 395
+            y: 412
+            width: 355
+            height: 52
+            bg_color: 0xDC2626
+            on_click:
+              - script.execute: cmd_stop_all
+            widgets:
+              - label:
+                  align: CENTER
+                  text_color: 0xFFFFFF
+                  text: "STOP / ABORT AUTOTUNE"
+    - id: recipe_page
+      bg_color: 0xF1F5F9
+      widgets:
+        - *home_btn
+        - textarea:
+            id: recipe_name_ta
+            x: 140
+            y: 10
+            width: 645
+            height: 44
+            text: "Custom Braumeister Brew"
+            placeholder_text: "Tap to rename recipe..."
+            one_line: true
+            on_click:
+              - lvgl.keyboard.update:
+                  id: recipe_kb
+                  textarea: recipe_name_ta
+              - lvgl.widget.show: recipe_kb
+            on_ready:
+              - lambda: 'id(recipe_name) = lv_textarea_get_text(id(recipe_name_ta));'
+              - lvgl.widget.hide: recipe_kb
+
+        - tabview:
+            id: recipe_tabs
+            x: 15
+            y: 62
+            width: 770
+            height: 405
+            bg_color: 0xFFFFFF
+            tabs:
+              - name: "MASH STEPS"
+                pad_all: 6
+                scrollable: false
+                widgets:
+                  - obj:
+                      x: 6
+                      y: 6
+                      width: 265
+                      height: 256
+                      bg_opa: TRANSP
+                      border_width: 0
+                      pad_all: 0
+                      scroll_dir: VER
+                      scrollbar_mode: AUTO
+                      layout:
+                        type: FLEX
+                        flex_flow: COLUMN
+                        pad_row: 6
+                      widgets:
+                        - button:
+                            id: btn_sel_m1
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 1;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m1
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 1: 63C • 45m"
+                        - button:
+                            id: btn_sel_m2
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 2;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m2
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 2: 72C • 15m"
+                        - button:
+                            id: btn_sel_m3
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 3;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m3
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 3: 78C • 10m"
+                        - button:
+                            id: btn_sel_m4
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 4;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m4
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 4: 65C • 0m"
+                        - button:
+                            id: btn_sel_m5
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 5;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m5
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 5: 78C • 0m"
+                        - button:
+                            id: btn_sel_m6
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 6;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m6
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 6: 65C • 0m"
+                        - button:
+                            id: btn_sel_m7
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 7;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m7
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 7: 65C • 0m"
+                        - button:
+                            id: btn_sel_m8
+                            width: 252
+                            height: 46
+                            on_click:
+                              - lambda: 'id(editing_mash_step) = 8;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_m8
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Step 8: 65C • 0m"
+                  - button:
+                      x: 6
+                      y: 270
+                      width: 66
+                      height: 44
+                      bg_color: 0x475569
+                      on_click:
+                        - lambda: |-
+                            auto t = BM_TEMPS; auto m = BM_TIMES;
+                            bm_del_step(t, m, id(active_mash_steps), id(editing_mash_step));
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "-STP"
+                  - button:
+                      x: 77
+                      y: 270
+                      width: 66
+                      height: 44
+                      bg_color: 0x1D4ED8
+                      on_click:
+                        - lambda: |-
+                            if (id(active_mash_steps) < 8) {
+                              id(active_mash_steps)++;
+                              id(editing_mash_step) = id(active_mash_steps);
+                              auto t = BM_TEMPS; auto m = BM_TIMES;
+                              if (*t.at(id(active_mash_steps) - 1) < 30.0f) *t.at(id(active_mash_steps) - 1) = 65.0f;
+                              if (*m.at(id(active_mash_steps) - 1) == 0) *m.at(id(active_mash_steps) - 1) = 15;
+                            }
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "+STP"
+                  - button:
+                      x: 148
+                      y: 270
+                      width: 58
+                      height: 44
+                      bg_color: 0x0F766E
+                      on_click:
+                        - lambda: |-
+                            int s = id(editing_mash_step);
+                            if (s > 1) {
+                              auto t = BM_TEMPS; auto m = BM_TIMES;
+                              std::swap(*t.at(s - 1), *t.at(s - 2));
+                              std::swap(*m.at(s - 1), *m.at(s - 2));
+                              id(editing_mash_step) = s - 1;
+                            }
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "UP"
+                  - button:
+                      x: 211
+                      y: 270
+                      width: 60
+                      height: 44
+                      bg_color: 0x0F766E
+                      on_click:
+                        - lambda: |-
+                            int s = id(editing_mash_step);
+                            if (s < id(active_mash_steps)) {
+                              auto t = BM_TEMPS; auto m = BM_TIMES;
+                              std::swap(*t.at(s - 1), *t.at(s));
+                              std::swap(*m.at(s - 1), *m.at(s));
+                              id(editing_mash_step) = s + 1;
+                            }
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "DN"
+                  - obj:
+                      x: 285
+                      y: 6
+                      width: 455
+                      height: 308
+                      bg_color: 0xF8FAFC
+                      border_width: 1
+                      border_color: 0xCBD5E1
+                      radius: 12
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - label:
+                            id: lbl_edit_step_title
+                            align: TOP_MID
+                            y: 10
+                            text_color: 0x1D4ED8
+                            text: "EDITING STEP 1"
+                        - label:
+                            x: 14
+                            y: 44
+                            text_color: 0x475569
+                            text: "TEMPERATURE"
+                        - button:
+                            <<: *step_slate
+                            x: 14
+                            y: 70
+                            on_click:
+                              - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -5.0f, 30.0f, 85.0f);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-5°"
+                        - button:
+                            <<: *step_dark
+                            x: 94
+                            y: 70
+                            on_click:
+                              - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -1.0f, 30.0f, 85.0f);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-1°"
+                        - label:
+                            id: lbl_edit_step_temp
+                            align: TOP_MID
+                            y: 88
+                            text_font: montserrat_28
+                            text_color: 0x0F172A
+                            text: "63 °C"
+                        - button:
+                            <<: *step_dark
+                            x: 291
+                            y: 70
+                            on_click:
+                              - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 1.0f, 30.0f, 85.0f);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+1°"
+                        - button:
+                            <<: *step_slate
+                            x: 365
+                            y: 70
+                            on_click:
+                              - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 5.0f, 30.0f, 85.0f);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+5°"
+                        - label:
+                            x: 14
+                            y: 162
+                            text_color: 0x475569
+                            text: "DURATION (MINUTES)"
+                        - button:
+                            <<: *step_slate
+                            x: 14
+                            y: 190
+                            on_click:
+                              - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -5, 0, 180);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-5m"
+                        - button:
+                            <<: *step_dark
+                            x: 94
+                            y: 190
+                            on_click:
+                              - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -1, 0, 180);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-1m"
+                        - label:
+                            id: lbl_edit_step_time
+                            align: TOP_MID
+                            y: 208
+                            text_font: montserrat_28
+                            text_color: 0x0F172A
+                            text: "45m"
+                        - button:
+                            <<: *step_dark
+                            x: 291
+                            y: 190
+                            on_click:
+                              - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 1, 0, 180);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+1m"
+                        - button:
+                            <<: *step_slate
+                            x: 365
+                            y: 190
+                            on_click:
+                              - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 5, 0, 180);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+5m"
+              - name: "BOIL & HOPS"
+                pad_all: 6
+                scrollable: false
+                widgets:
+                  - obj:
+                      x: 6
+                      y: 4
+                      width: 734
+                      height: 52
+                      bg_color: 0xF8FAFC
+                      border_width: 1
+                      border_color: 0xCBD5E1
+                      radius: 10
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - button:
+                            x: 8
+                            y: 6
+                            width: 58
+                            height: 38
+                            on_click:
+                              - lambda: 'if (id(boil_time_min) > 15) id(boil_time_min) -= 5;'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-5m"
+                        - label:
+                            id: lbl_boil_time_val
+                            x: 78
+                            y: 16
+                            text_color: 0x0F172A
+                            text: "Boil: 60 min"
+                        - button:
+                            x: 190
+                            y: 6
+                            width: 58
+                            height: 38
+                            on_click:
+                              - lambda: 'if (id(boil_time_min) < 120) id(boil_time_min) += 5;'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+5m"
+                        - button:
+                            x: 410
+                            y: 6
+                            width: 58
+                            height: 38
+                            on_click:
+                              - lambda: 'if (id(boil_power_pct) > 30) id(boil_power_pct) -= 5;'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-5%"
+                        - label:
+                            id: lbl_boil_pwr_val
+                            x: 482
+                            y: 16
+                            text_color: 0x0F172A
+                            text: "Power: 85%"
+                        - button:
+                            x: 595
+                            y: 6
+                            width: 58
+                            height: 38
+                            on_click:
+                              - lambda: 'if (id(boil_power_pct) < 100) id(boil_power_pct) += 5;'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+5%"
+
+                  - obj:
+                      x: 6
+                      y: 64
+                      width: 265
+                      height: 204
+                      bg_opa: TRANSP
+                      border_width: 0
+                      pad_all: 0
+                      scroll_dir: VER
+                      scrollbar_mode: AUTO
+                      layout:
+                        type: FLEX
+                        flex_flow: COLUMN
+                        pad_row: 6
+                      widgets:
+                        - button:
+                            id: btn_sel_h1
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 1;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h1
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 1: 60 min"
+                        - button:
+                            id: btn_sel_h2
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 2;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h2
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 2: 15 min"
+                        - button:
+                            id: btn_sel_h3
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 3;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h3
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 3: 0 min"
+                        - button:
+                            id: btn_sel_h4
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 4;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h4
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 4: 0 min"
+                        - button:
+                            id: btn_sel_h5
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 5;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h5
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 5: 0 min"
+                        - button:
+                            id: btn_sel_h6
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 6;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h6
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 6: 0 min"
+                        - button:
+                            id: btn_sel_h7
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 7;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h7
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 7: 0 min"
+                        - button:
+                            id: btn_sel_h8
+                            width: 252
+                            height: 45
+                            on_click:
+                              - lambda: 'id(editing_hop_idx) = 8;'
+                              - script.execute: update_recipe_highlights
+                            widgets:
+                              - label:
+                                  id: lbl_h8
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "Hop 8: 0 min"
+
+                  - button:
+                      x: 6
+                      y: 276
+                      width: 128
+                      height: 40
+                      bg_color: 0x475569
+                      on_click:
+                        - lambda: 'auto h = BM_HOPS; bm_del_hop(h, id(active_hop_count), id(editing_hop_idx));'
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "- HOP"
+                  - button:
+                      x: 143
+                      y: 276
+                      width: 128
+                      height: 40
+                      bg_color: 0x1D4ED8
+                      on_click:
+                        - lambda: |-
+                            if (id(active_hop_count) < 8) {
+                              id(active_hop_count)++;
+                              id(editing_hop_idx) = id(active_hop_count);
+                            }
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "+ HOP"
+                  - obj:
+                      x: 285
+                      y: 66
+                      width: 455
+                      height: 250
+                      bg_color: 0xF8FAFC
+                      border_width: 1
+                      border_color: 0xCBD5E1
+                      radius: 12
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - label:
+                            id: lbl_edit_hop_title
+                            align: TOP_MID
+                            y: 18
+                            text_color: 0x1D4ED8
+                            text: "HOP 1 ADDITION TIME"
+                        - button:
+                            width: 74
+                            height: 80
+                            bg_color: 0x334155
+                            x: 14
+                            y: 90
+                            on_click:
+                              - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), -5, 0, 120);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-5m"
+                        - button:
+                            width: 68
+                            height: 80
+                            bg_color: 0x1E293B
+                            x: 94
+                            y: 90
+                            on_click:
+                              - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), -1, 0, 120);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "-1m"
+                        - label:
+                            id: lbl_edit_hop_time
+                            align: TOP_MID
+                            y: 114
+                            text_font: montserrat_28
+                            text_color: 0x0F172A
+                            text: "60m"
+                        - button:
+                            width: 68
+                            height: 80
+                            bg_color: 0x1E293B
+                            x: 291
+                            y: 90
+                            on_click:
+                              - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), 1, 0, 120);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+1m"
+                        - button:
+                            width: 74
+                            height: 80
+                            bg_color: 0x334155
+                            x: 365
+                            y: 90
+                            on_click:
+                              - lambda: 'auto h = BM_HOPS; bm_adj_int(h, id(editing_hop_idx), 5, 0, 120);'
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "+5m"
+              - name: "SAVED SLOTS"
+                pad_all: 6
+                scrollable: false
+                widgets:
+                  - button:
+                      id: btn_slot_1
+                      x: 10
+                      y: 12
+                      width: 350
+                      height: 55
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 1;'
+                      widgets:
+                        - label:
+                            id: lbl_slot_1
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 1: German Pilsner"
+                  - button:
+                      id: btn_slot_2
+                      x: 380
+                      y: 12
+                      width: 350
+                      height: 55
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 2;'
+                      widgets:
+                        - label:
+                            id: lbl_slot_2
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 2: West Coast IPA"
+                  - button:
+                      id: btn_slot_3
+                      x: 10
+                      y: 80
+                      width: 350
+                      height: 55
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 3;'
+                      widgets:
+                        - label:
+                            id: lbl_slot_3
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 3: Hefeweizen"
+                  - button:
+                      id: btn_slot_4
+                      x: 380
+                      y: 80
+                      width: 350
+                      height: 55
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 4;'
+                      widgets:
+                        - label:
+                            id: lbl_slot_4
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 4: Empty Preset"
+                  - label:
+                      id: lbl_slot_selected
+                      x: 10
+                      y: 158
+                      text_color: 0x0F172A
+                      text: "Selected: Slot 1"
+                  - button:
+                      x: 530
+                      y: 148
+                      width: 200
+                      height: 38
+                      bg_color: 0x475569
+                      on_click:
+                        - lambda: |-
+                            id(slot1_name) = "Slot 1: German Pilsner";
+                            id(slot1_data) = "3|63,45|72,15|78,10|0,0|0,0|0,0|0,0|0,0|60,85|2|60,15,0,0,0,0,0,0";
+                            id(slot2_name) = "Slot 2: West Coast IPA";
+                            id(slot2_data) = "2|65,60|78,10|0,0|0,0|0,0|0,0|0,0|0,0|60,85|3|60,15,5,0,0,0,0,0";
+                            id(slot3_name) = "Slot 3: Hefeweizen";
+                            id(slot3_data) = "4|45,15|52,15|63,35|72,20|0,0|0,0|0,0|0,0|60,85|1|60,0,0,0,0,0,0,0";
+                            id(slot4_name) = "Slot 4: Empty Preset";
+                            id(slot4_data) = "1|65,60|0,0|0,0|0,0|0,0|0,0|0,0|0,0|60,85|0|0,0,0,0,0,0,0,0";
+                            id(status_text) = "FACTORY RECIPE SLOTS RESTORED";
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "RESET DEFAULTS"
+
+                  - button:
+                      x: 10
+                      y: 196
+                      width: 350
+                      height: 75
+                      bg_color: 0x059669
+                      on_click:
+                        - script.execute: load_from_selected_slot
+                        - lambda: 'id(status_text) = "LOADED: " + id(recipe_name);'
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "LOAD SELECTED RECIPE"
+                  - button:
+                      x: 380
+                      y: 196
+                      width: 350
+                      height: 75
+                      bg_color: 0x1D4ED8
+                      on_click:
+                        - lambda: 'id(recipe_name) = lv_textarea_get_text(id(recipe_name_ta));'
+                        - script.execute: save_to_selected_slot
+                        - lambda: 'id(status_text) = "SAVED TO SLOT " + std::to_string(id(selected_slot));'
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "SAVE CURRENT TO SLOT"
+              - name: "BEERXML"
+                pad_all: 6
+                scrollable: false
+                widgets:
+                  - label:
+                      x: 15
+                      y: 18
+                      text_color: 0x1D4ED8
+                      text: "IMPORT BEERXML RECIPE OVER WI-FI:"
+                  - label:
+                      x: 15
+                      y: 56
+                      text_color: 0x0F172A
+                      text: "1. Find your controller IP address on the Wi-Fi Settings page."
+                  - label:
+                      x: 15
+                      y: 90
+                      text_color: 0x0F172A
+                      text: "2. Open http://<IP-ADDRESS>/import in your browser."
+                  - label:
+                      x: 15
+                      y: 124
+                      text_color: 0x0F172A
+                      text: "3. Select your .xml file (Brewfather, BeerSmith, Grainfather)"
+                  - label:
+                      x: 15
+                      y: 158
+                      text_color: 0x0F172A
+                      text: "   and click Upload & Load Recipe. Then save to a slot!"
+
+        - keyboard:
+            id: recipe_kb
+            align: BOTTOM_MID
+            width: 800
+            height: 235
+            hidden: true
+    - id: wifi_page
+      widgets:
+        - *home_btn
+        - label:
+            x: 140
+            y: 12
+            text: "WIFI SETTINGS (2.4 GHz)"
+        - label:
+            id: wifi_conn_info
+            x: 140
+            y: 34
+            text_color: 0xF59E0B
+            text: "Status: Checking connection..."
+        - keyboard:
+            id: on_screen_kb
+            align: BOTTOM_MID
+            width: 800
+            height: 245
+        - button:
+            x: 20
+            y: 68
+            width: 130
+            height: 48
+            bg_color: 0x1D4ED8
+            on_click:
+              - lambda: |-
+                  lv_label_set_text(id(wifi_conn_info), "Scanning for 2.4 GHz networks...");
+                  wifi_scan_config_t scan_config = {};
+                  scan_config.show_hidden = false;
+                  if (esp_wifi_scan_start(&scan_config, true) == ESP_OK) {
+                    uint16_t ap_count = 0;
+                    esp_wifi_scan_get_ap_num(&ap_count);
+                    if (ap_count > 15) ap_count = 15;
+                    if (ap_count > 0) {
+                      std::vector<wifi_ap_record_t> ap_list(ap_count);
+                      if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
+                        std::string opts = "";
+                        for (int i = 0; i < ap_count; i++) {
+                          std::string ssid_str(reinterpret_cast<const char*>(ap_list.at(i).ssid));
+                          if (!ssid_str.empty()) {
+                            if (!opts.empty()) opts += "\n";
+                            opts += ssid_str;
+                          }
+                        }
+                        if (!opts.empty()) {
+                          lv_dropdown_set_options(id(wifi_ssid_dd)->obj, opts.c_str());
+                          lv_label_set_text(id(wifi_conn_info), ("Found " + std::to_string(ap_count) + " network(s)").c_str());
+                        }
+                      }
+                    } else {
+                      lv_label_set_text(id(wifi_conn_info), "No 2.4 GHz networks found");
+                    }
+                  } else {
+                    lv_label_set_text(id(wifi_conn_info), "Scan failed - try again");
+                  }
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "SCAN"
+        - dropdown:
+            id: wifi_ssid_dd
+            x: 160
+            y: 68
+            width: 320
+            height: 48
+            options:
+              - "Tap SCAN to find Wi-Fi"
+        - textarea:
+            id: wifi_pass_ta
+            x: 490
+            y: 68
+            width: 290
+            height: 48
+            placeholder_text: "Wi-Fi Password"
+            password_mode: true
+            one_line: true
+            on_click:
+              - lvgl.keyboard.update:
+                  id: on_screen_kb
+                  textarea: wifi_pass_ta
+        - button:
+            x: 20
+            y: 128
+            width: 260
+            height: 48
+            bg_color: 0x059669
+            on_click:
+              - lambda: |-
+                  std::vector<char> selected_ssid(64, 0);
+                  lv_dropdown_get_selected_str(id(wifi_ssid_dd)->obj, selected_ssid.data(), selected_ssid.size());
+                  const char *pass = lv_textarea_get_text(id(wifi_pass_ta));
+                  if (std::string(selected_ssid.data()) != "Tap SCAN to find Wi-Fi") {
+                    id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
+                    lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
+                    delay(500);
+                    App.safe_reboot();
+                  }
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "SAVE & CONNECT"
