@@ -581,7 +581,9 @@ interval:
             }
           }
 
-          if (id(brew_state) == 1 || id(brew_state) == 3 || id(brew_state) == 5 || id(brew_state) == 6) {
+          bool manual_heating = (id(brew_state) == 0) && (id(manual_htr_1) || id(manual_htr_2));
+
+          if (manual_heating || id(brew_state) == 1 || id(brew_state) == 3 || id(brew_state) == 5 || id(brew_state) == 6) {
             if (std::isnan(id(kettle_temp).state)) {
               id(cmd_safety_pause).execute();
               id(status_text) = "SAFETY PAUSE: PROBE LOST (TAP START)";
@@ -595,11 +597,9 @@ interval:
           }
 
           // =========================================================
-          // DRY-FIRE & DETACHED PROBE PROTECTION
+          // DRY-FIRE & DETACHED PROBE PROTECTION (SLIDING WINDOW)
           // =========================================================
-          bool heaters_active = (id(brew_state) == 0)
-              ? (id(manual_htr_1) || id(manual_htr_2))
-              : ((id(active_h1_pct) + id(active_h2_pct)) >= 80);
+          bool heaters_active = manual_heating || ((id(brew_state) != 0) && ((id(active_h1_pct) + id(active_h2_pct)) >= 80));
 
           if (heaters_active && !std::isnan(id(kettle_temp).state)) {
             if (id(runaway_sec) == 0) {
@@ -607,18 +607,28 @@ interval:
             }
             id(runaway_sec)++;
 
-            // 1. Dry-Fire Check: > 3.5C spike within 10 seconds
-            if (id(runaway_sec) <= 10) {
-              if ((id(kettle_temp).state - id(runaway_ref_temp)) > 3.5f) {
-                id(cmd_safety_pause).execute();
-                id(status_text) = "SAFETY PAUSE: DRY-FIRE SPIKE!";
-                return;
+            // 1. Dry-Fire Check: > 3.0C spike within any 15-second window
+            float rise = id(kettle_temp).state - id(runaway_ref_temp);
+            if (id(runaway_sec) <= 15 && rise > 3.0f) {
+              id(cmd_safety_pause).execute();
+              id(status_text) = "SAFETY PAUSE: DRY-FIRE SPIKE!";
+              return;
+            }
+
+            bool mash_blending = (id(brew_state) == 1) && !std::isnan(id(secondary_temp).state) &&
+                                 (id(secondary_temp).state > 0.0f) && (id(secondary_temp).state < 105.0f);
+            int no_rise_limit = mash_blending ? 300 : 180;
+
+            // Slide the spike baseline forward every 15s (unless checking detached probe)
+            if (id(runaway_sec) % 15 == 0 && id(runaway_sec) < no_rise_limit) {
+              if (rise >= 0.5f) {
+                id(runaway_ref_temp) = id(kettle_temp).state;
               }
             }
 
-            // 2. Detached Probe Check: < 0.5C rise after 180s (3 min) of high power (below 96C)
-            if (id(runaway_sec) >= 180) {
-              if (id(kettle_temp).state < 96.0f && (id(kettle_temp).state - id(runaway_ref_temp)) < 0.5f) {
+            // 2. Detached Probe Check: < 0.5C rise after 180s (or 300s in Mash Blend) below 96C
+            if (id(runaway_sec) >= no_rise_limit) {
+              if (id(kettle_temp).state < 96.0f && rise < 0.5f) {
                 id(cmd_safety_pause).execute();
                 id(status_text) = "SAFETY PAUSE: NO TEMP RISE!";
                 return;
@@ -762,6 +772,7 @@ interval:
           else if (id(num_elements) == 2 && id(element_watts) >= 3200) model_lbl = "BM50";
           std::string amp_txt = (id(max_amps) > 0) ? (std::to_string(id(max_amps)) + "A") : "MAX";
           id(hw_status_text) = model_lbl + " | " + std::to_string(id(element_watts)) + "W | " + std::to_string(id(num_elements)) + " EL | " + std::to_string(id(num_pumps)) + " PMP | " + amp_txt;
+
           // =========================================================
           // SECTION 3: ACTIVE SCREEN UI — HOME & BREW PAGES
           // =========================================================
@@ -867,11 +878,16 @@ interval:
               set_lbl_diff(id(lbl_pill_pump2), id(pump_2).state ? "PUMP 2: ON" : "PUMP 2: OFF");
             }
 
+            bool is_blending = (id(brew_state) == 1) && !std::isnan(id(secondary_temp).state) &&
+                               (id(secondary_temp).state > 0.0f) && (id(secondary_temp).state < 105.0f);
+
             if (!std::isnan(id(kettle_temp).state)) {
               int t_val = std::max(20, std::min(100, (int)id(kettle_temp).state));
               lv_arc_set_value(id(arc_kettle_temp), t_val);
               int t10 = (int)(id(kettle_temp).state * 10.0f);
-              set_lbl_diff(id(lbl_kettle_temp), std::to_string(t10 / 10) + "." + std::to_string(abs(t10 % 10)) + " C");
+              std::string t_str = std::to_string(t10 / 10) + "." + std::to_string(abs(t10 % 10)) + " C";
+              if (is_blending) t_str += "\n(BLEND)";
+              set_lbl_diff(id(lbl_kettle_temp), t_str);
             } else {
               set_lbl_diff(id(lbl_kettle_temp), "--.- C");
             }

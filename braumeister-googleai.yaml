@@ -278,7 +278,14 @@ sensor:
       sorting_group_id: grp_telemetry
       sorting_weight: 0
     lambda: |-
-      return id(swap_probes) ? id(raw_temp_1).state : id(raw_temp_0).state;
+      float main_t = id(swap_probes) ? id(raw_temp_1).state : id(raw_temp_0).state;
+      float aux_t  = id(swap_probes) ? id(raw_temp_0).state : id(raw_temp_1).state;
+      if (std::isnan(main_t)) return NAN;
+      // Blend 70% Mash Probe + 30% Kettle Probe during active Mash if Aux probe is valid
+      if (id(brew_state) == 1 && !std::isnan(aux_t) && aux_t > 0.0f && aux_t < 105.0f) {
+        return (aux_t * 0.70f) + (main_t * 0.30f);
+      }
+      return main_t;
 
   - platform: template
     id: secondary_temp

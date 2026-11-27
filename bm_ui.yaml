@@ -62,7 +62,7 @@ lvgl:
                 id: boot_status_label
                 align: CENTER
                 y: 45
-                text: "Initializing system and webserver..."
+                text: "Initializing system and starting webserver..."
                 text_color: 0x94A3B8
   displays:
     - my_display
