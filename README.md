@@ -12,6 +12,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - Presets for different Braumeister models.
 - Circuit breaker adaptation; you can set your circuit braker amperage and the software will compensate for this. Mainly used for the BM50.
 - Only using the weaker element (1.3kw) to hold temperature during mash (only applies to BM50). This minimizes the risk for scorching during mash.
+- OTA firmware updates (manually upload the .bin through a web interface)
 
 
 # Hardware that you need (total cost about 100USD):
@@ -21,6 +22,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - 1 or 2 2A G3MB-202P SSR module (for the pumps)
 - 1 PCF8574 IO expander module
 - 1 or 2 DS18B20 sensors (recommended to replace the sensor inside the kettle, but also add an external sensor inside the mash)
+- IKEA Sjöss USB-C charger
 
 # Not finished:
 - 3D printed controller enclosure
