@@ -1,39 +1,79 @@
-# braucontrol
-Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace the control unit on BM10, BM20 and BM50.
+# BrauControl — ESPHome Universal Braumeister Controller
 
-# For now, it has the following functions:
+**BrauControl** is an open-source, standalone automated brewing controller built on ESPHome and LVGL for **ESP32-S3 7-inch (800×480) RGB touchscreens** (such as the Waveshare ESP32-S3-Touch-LCD-7). Designed for Speidel Braumeister systems (BM10, BM20, BM50) and custom RIMS/HERMS single-vessel kettles, it runs completely offline with an integrated Wi-Fi web dashboard and BeerXML recipe importer.
 
-- Recipe import (BeerXML)
-- Recipe builder directly on the controller, with 8 slots in total for saving recipes (maximum 8 mash steps and 8 hop additions).
-- Local web server with some controls and the BeerXML uploader.
-- Delayed start
-- Configurable for 1 or 2 heating elements, and 1 or 2 pumps, so should cover all models of BM10/BM20/BM50.
-- The Web UI works well on mobile devices, so as long as you are on the same WiFi you could follow along from your phone.
-- Confirm before starting the next step in the brew session.
-- Presets for different Braumeister models.
-- Circuit breaker adaptation; you can set your circuit braker amperage and the software will compensate for this. Mainly used for the BM50.
-- Only using the weaker element (1.3kw) to hold temperature during mash (only applies to BM50). This minimizes the risk for scorching during mash.
-- OTA firmware updates (manually upload the .bin through a web interface)
-- Power loss recovery, if the controller loses power during a brew, it has a chance to resume after restarting.
+---
 
+## Features
 
-# Hardware that you need (total cost about 100USD):
+* **7" Touchscreen UI (LVGL):**
+  * **Brew Session Dashboard:** Live radial kettle temperature gauge, target temperature, countdown/delay timer, auxiliary probe readout, manual element/pump overrides, and step confirmation modals.
+  * **Recipe Builder:** Up to **8 mash steps** (`30–85°C`), configurable boil duration and boil power (`30–100%`), up to **8 hop addition timers**, and **8 persistent NVS flash recipe slots**.
+  * **Hardware & PID Setup:** One-tap presets for **BM10 (1.2kW)**, **BM20 (2.0kW)**, and **BM50 (3.3kW)**, custom pump run/rest cycling, probe swapping, and built-in **PID auto-tuning**.
+  * **On-Screen Wi-Fi Manager:** Scan 2.4 GHz networks and enter credentials directly on the touchscreen, with automatic fallback AP (`BM-BrewController`).
+* **Embedded Web Dashboard (`/brewcontrol`):**
+  * Mobile-friendly web UI for live telemetry, remote brew progression (`Start`, `Confirm Step`, `Start Boil`, `Stop`, `Delay Start`), manual I/O overrides, and hop alarm silencing.
+  * Client-side **BeerXML (`.xml`)** parser supporting recipes exported from Brewfather, BeerSmith, and Grainfather.
+* **230V Breaker / Fuse Protection:**
+  * Dynamically caps heater duty cycles and alternates dual elements on **10A (2.3kW)**, **13A (3.0kW)**, **16A (3.6kW)**, or **Unlimited** circuits while reserving headroom for circulation pumps.
+* **Power-Loss Recovery:**
+  * Periodically checkpoints active brew state, mash step, and remaining time to NVS flash, automatically resuming an interrupted mash, boil, or delayed start upon reboot.
 
-- Waveshare ESP32-S3 7" touchscreen with 800x480 resolution (https://docs.waveshare.com/ESP32-S3-Touch-LCD-7)
-- 1 or 2 40A SSRs with heatsink (for the heating elements)
-- 1 or 2 2A G3MB-202P SSR module (for the pumps)
-- 1 PCF8574 IO expander module
-- 1 or 2 DS18B20 sensors (recommended to replace the sensor inside the kettle, but also add an external sensor inside the mash)
-- IKEA Sjöss USB-C charger
+---
 
-You can get away a bit cheaper by only using 1 40A SSR and 1 2A SSR as long as you are not planning on using it with a BM50. In my opinion, it is not worth trying to save a few bucks in case you want to add it later (which will then be more expensive than building it as a universal unit from the start).
+## Hardware & Pinout
 
-# Not finished:
-- 3D printed controller enclosure
-- Cable connectors
+### Supported Controller Board
+* **Microcontroller:** ESP32-S3 (8MB Flash, Octal PSRAM @ 120MHz)
+* **Display & Touch:** 800×480 MIPI RGB LCD + GT911 Capacitive Touch Controller
 
-# Please note: This requires high voltage wiring as well as modifying your original cable connectors to the heaters and pumps.
-# THIS SHOULD ALWAYS BE DONE BY A LICENSED ELECTRICIAN.
-However, the new connectors eliminate the issue on the earlier controllers where the socket and connector on the BM50 could melt.
+### GPIO & I2C Expander Mapping
 
-This software has been created in Googles AI-mode straight in my browser, I am not a programmer.
+| Interface / Expander | Pin / Address | Function | Notes |
+| :--- | :--- | :--- | :--- |
+| **I2C Bus (`bus_a`)** | `GPIO 8` (SDA) / `GPIO 9` (SCL) | Shared I2C bus | Connects GT911, CH422G, and PCF8574 |
+| **GT911 Touch** | `GPIO 4` | Touch Interrupt (`INT`) | Reset handled via CH422G `EXIO1` |
+| **OneWire Bus** | `GPIO 6` | DS18B20 Temp Probes | Index `0`: Kettle Probe, Index `1`: Aux/Mash Probe |
+| **CH422G Expander** | `EXIO 1` | Touch Reset | Active-low touch reset |
+| **CH422G Expander** | `EXIO 2` | LCD Backlight | Binary backlight control |
+| **CH422G Expander** | `EXIO 6` | LCD Enable | Panel power/enable pin |
+| **PCF8574 (`0x20`)** | `P0` | Heater Element 1 (SSR) | 2s Slow PWM, active-low (`inverted: true`) |
+| **PCF8574 (`0x20`)** | `P1` | Heater Element 2 (SSR) | 2s Slow PWM, active-low (`inverted: true`) |
+| **PCF8574 (`0x20`)** | `P2` | Circulation Pump 1 | Active-low relay control (`inverted: true`) |
+| **PCF8574 (`0x20`)** | `P3` | Circulation Pump 2 | Active-low relay control (`inverted: true`) |
+| **PCF8574 (`0x20`)** | `P4` | Alarm Buzzer | Active-high piezo buzzer (`inverted: false`) |
+
+---
+
+## Built-In Safety Interlocks
+
+BrauControl runs a 1-second hardware watchdog loop with multiple independent safety cutoffs:
+
+1. **Over-Temperature Emergency Cutoff:** Immediately shuts down all heaters and pumps if `kettle_temp > 105.0°C`.
+2. **Lost Sensor Protection:** Halts heating immediately if the primary kettle probe disconnects or returns `NaN` during active heating.
+3. **Dry-Fire / Rapid Spike Detection:** Triggers an emergency stop if kettle temperature spikes by **more than `3.5°C` within 10 seconds** while heaters are active.
+4. **Detached Probe Detection:** Triggers an emergency stop if heaters run at high power (`>= 80%`) below `96°C` for **3 minutes** with less than `0.5°C` temperature rise.
+5. **Pump Thermal Lockout:** Automatically turns off and locks out circulation pumps whenever wort temperature reaches **`>= 88.0°C`** to prevent pump cavitation and impeller damage.
+6. **Smart Mash Hold:** On dual-element systems (BM50), mash temperature maintenance uses only the smaller 1300W element to prevent scorching and overshoot.
+
+---
+
+## Repository Structure
+
+* `braumeister-googleai.yaml` — Main ESPHome configuration, hardware pins, sensors, PID climate controller, and persistent globals.
+* `bm_ui.yaml` — LVGL 800×480 touchscreen interface (Home, Brew Session, Recipe Builder, Hardware Setup, Wi-Fi Settings).
+* `bm_scripts.yaml` — Brew state machine, safety interlocks, PID auto-tune handler, power-loss recovery, and `/brewcontrol` web API.
+* `braumeister_helpers.h` — Embedded HTML/JS web dashboard, BeerXML parser, and C++ recipe/list helper functions.
+* `secrets.yaml` — Wi-Fi credentials template (optional; Wi-Fi can also be configured directly via the touchscreen).
+
+---
+
+## Installation & Flashing
+
+1. Install **ESPHome `2026.1.0`** or newer.
+2. Place all five files in your ESPHome configuration directory.
+3. Compile and flash via USB-C for the initial install:
+   ```bash
+   esphome run braumeister-googleai.yaml
+   ```
+4. Once booted, tap **WIFI SETTINGS** on the touchscreen to connect to your 2.4 GHz network, then open `http://<CONTROLLER-IP>/brewcontrol` in any browser to upload BeerXML recipes or monitor your brew remotely.
