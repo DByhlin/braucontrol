@@ -4,6 +4,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 # For now, it has the following functions:
 
 - Recipe import (BeerXML)
+- Recipe builder directly on the controller, with 8 slots in total for saving recipes.
 - Local web server with some controls and the BeerXML uploader.
 - Delayed start
 - Configurable for 1 or 2 heating elements, and 1 or 2 pumps, so should cover all models of BM10/BM20/BM50.
