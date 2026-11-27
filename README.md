@@ -24,6 +24,8 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - 1 or 2 DS18B20 sensors (recommended to replace the sensor inside the kettle, but also add an external sensor inside the mash)
 - IKEA Sjöss USB-C charger
 
+You can get away a bit cheaper by only using 1 40A SSR and 1 2A SSR as long as you are not planning on using it with a BM50. In my opinion, it is not worth trying to save a few bucks in case you want to add it later (which will then be more expensive than building it as a universal unit from the start).
+
 # Not finished:
 - 3D printed controller enclosure
 - Cable connectors
