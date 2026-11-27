@@ -53,6 +53,8 @@
 
 BrauControl runs a 1-second hardware watchdog loop across both **automated brewing** and **manual heater overrides**. When any fault condition triggers, BrauControl executes a **Safe-Pause**: it immediately cuts power to all heaters and pumps, sounds the alarm buzzer, and **holds your active mash step or boil timer** so you can resolve the physical issue and tap **START** (or **BOIL**) to resume right where you left off—or tap **STOP** to fully abort.
 
+* **Isomerization-Aware Boil Timer:** If a Safe-Pause occurs during the boil after hops have already been added and the wort remains **`>= 80.0°C`**, the boil countdown (and any upcoming hop alerts) continues automatically so hop alpha-acid isomerization and IBU balance stay on schedule; if wort temperature drops below `80.0°C`, the timer pauses until heating resumes.
+
 1. **Over-Temperature Safe-Pause:** Cuts power and pauses the session if `kettle_temp > 105.0°C`.
 2. **Lost Sensor Safe-Pause:** Cuts power and pauses the session if the primary kettle probe disconnects or returns `NaN` during active heating (automated or manual).
 3. **Dry-Fire / Sliding-Window Spike Safe-Pause:** Cuts power and pauses the session if kettle temperature jumps by **more than `3.0°C` within any 15-second sliding window** while heaters are active.
