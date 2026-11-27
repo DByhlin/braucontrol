@@ -96,14 +96,14 @@ async function sendXml(){
     const steps=Array.from(doc.querySelectorAll('MASH_STEP')).slice(0,8);
     const sCount=steps.length||1;
     let sPart=[];
-    for(let i=0;i<8;i++){
+    for(let i=0;i<sCount;i++){
       if(steps.at(i)){sPart.push(Math.round(parseFloat(steps.at(i).querySelector('STEP_TEMP')?.textContent||'65'))+','+Math.round(parseFloat(steps.at(i).querySelector('STEP_TIME')?.textContent||'15')));}
-      else{sPart.push('0,0');}
+      else{sPart.push('65,15');}
     }
     const hops=Array.from(doc.querySelectorAll('HOP')).filter(h=>['Boil','First Wort'].includes((h.querySelector('USE')?.textContent||'').trim())).slice(0,8);
     let hPart=[];
-    for(let i=0;i<8;i++){hPart.push(hops.at(i)?Math.round(parseFloat(hops.at(i).querySelector('TIME')?.textContent||'0')):0);}
-    const packed='PACKED|'+rName+'|'+sCount+'|'+sPart.join('|')+'|'+bTime+',85|'+hops.length+'|'+hPart.join(',');
+    for(let i=0;i<hops.length;i++){hPart.push(Math.round(parseFloat(hops.at(i).querySelector('TIME')?.textContent||'0')));}
+    const packed='PACKED|'+rName+'|'+sCount+'|'+sPart.join(';')+'|'+bTime+',85|'+hops.length+'|'+hPart.join(',');
     const res=await fetch('/brewcontrol?value='+encodeURIComponent(packed),{method:'POST'});
     if(res.ok){msg.style.color='#34d399';msg.innerText='Loaded "'+rName+'" ('+sCount+' steps, '+hops.length+' hops).';poll();}
     else{msg.style.color='#f87171';msg.innerText='Upload failed: HTTP '+res.status;}
@@ -148,9 +148,62 @@ inline void bm_del_hop(std::vector<int*> &hops, int &count, int &sel) {
     if (sel > count) sel = (count > 0) ? count : 1;
   }
 }
+
+inline bool bm_unpack_recipe(
+    const std::string &raw,
+    std::vector<float*> &t,
+    std::vector<int*> &m,
+    std::vector<int*> &h,
+    int &out_ms,
+    int &out_bt,
+    int &out_bp,
+    int &out_hc) {
+  for (int i = 0; i < 8; i++) { *t.at(i) = 0.0f; *m.at(i) = 0; *h.at(i) = 0; }
+
+  size_t p1 = raw.find('|');
+  size_t p2 = (p1 != std::string::npos) ? raw.find('|', p1 + 1) : std::string::npos;
+  size_t p3 = (p2 != std::string::npos) ? raw.find('|', p2 + 1) : std::string::npos;
+  size_t p4 = (p3 != std::string::npos) ? raw.find('|', p3 + 1) : std::string::npos;
+  if (p4 == std::string::npos) return false;
+
+  // Compact format: ms|t1,m1;t2,m2|bt,bp|hc|h1,h2
+  if (raw.find(';', p1 + 1) != std::string::npos || raw.find('|', p4 + 1) == std::string::npos) {
+    out_ms = std::max(1, std::min(8, atoi(raw.substr(0, p1).c_str())));
+    std::string steps_str = raw.substr(p1 + 1, p2 - p1 - 1);
+    size_t sp = 0;
+    for (int i = 0; i < out_ms && sp < steps_str.size(); i++) {
+      size_t next_s = steps_str.find(';', sp);
+      std::string pair = (next_s == std::string::npos) ? steps_str.substr(sp) : steps_str.substr(sp, next_s - sp);
+      int tv = 65, mv = 15;
+      if (sscanf(pair.c_str(), "%d,%d", &tv, &mv) == 2) {
+        *t.at(i) = (float)tv;
+        *m.at(i) = mv;
+      }
+      if (next_s == std::string::npos) break;
+      sp = next_s + 1;
+    }
+    out_bt = 60; out_bp = 85;
+    sscanf(raw.substr(p2 + 1, p3 - p2 - 1).c_str(), "%d,%d", &out_bt, &out_bp);
+    out_hc = std::max(0, std::min(8, atoi(raw.substr(p3 + 1, p4 - p3 - 1).c_str())));
+    std::string hops_str = raw.substr(p4 + 1);
+    size_t hp = 0;
+    for (int i = 0; i < out_hc && hp < hops_str.size(); i++) {
+      size_t next_h = hops_str.find(',', hp);
+      std::string hval = (next_h == std::string::npos) ? hops_str.substr(hp) : hops_str.substr(hp, next_h - hp);
+      *h.at(i) = atoi(hval.c_str());
+      if (next_h == std::string::npos) break;
+      hp = next_h + 1;
+    }
+    return true;
+  }
+  return false;
+}
+
 #define BM_TEMPS std::vector<float*>{&id(mash_temp_1), &id(mash_temp_2), &id(mash_temp_3), &id(mash_temp_4), &id(mash_temp_5), &id(mash_temp_6), &id(mash_temp_7), &id(mash_temp_8)}
 #define BM_TIMES std::vector<int*>{&id(mash_time_1), &id(mash_time_2), &id(mash_time_3), &id(mash_time_4), &id(mash_time_5), &id(mash_time_6), &id(mash_time_7), &id(mash_time_8)}
 #define BM_HOPS  std::vector<int*>{&id(hop_time_1), &id(hop_time_2), &id(hop_time_3), &id(hop_time_4), &id(hop_time_5), &id(hop_time_6), &id(hop_time_7), &id(hop_time_8)}
+#define BM_SLOT_NAMES std::vector<std::string*>{&id(slot1_name), &id(slot2_name), &id(slot3_name), &id(slot4_name), &id(slot5_name), &id(slot6_name), &id(slot7_name), &id(slot8_name)}
+#define BM_SLOT_DATA  std::vector<std::string*>{&id(slot1_data), &id(slot2_data), &id(slot3_data), &id(slot4_data), &id(slot5_data), &id(slot6_data), &id(slot7_data), &id(slot8_data)}
 
 #include <cstdlib>
 #include <cstring>

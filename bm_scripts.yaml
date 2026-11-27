@@ -12,17 +12,110 @@ script:
   - id: update_recipe_highlights
     then:
       - lambda: |-
-          std::vector<lv_obj_t*> m_btns = {
-            id(btn_sel_m1), id(btn_sel_m2), id(btn_sel_m3), id(btn_sel_m4),
-            id(btn_sel_m5), id(btn_sel_m6), id(btn_sel_m7), id(btn_sel_m8)
+          auto active_t = BM_TEMPS;
+          auto active_m = BM_TIMES;
+          auto active_h = BM_HOPS;
+          auto s_names = BM_SLOT_NAMES;
+
+          std::vector<lv_obj_t*> m_lbls = {id(lbl_m1), id(lbl_m2), id(lbl_m3), id(lbl_m4), id(lbl_m5), id(lbl_m6), id(lbl_m7), id(lbl_m8)};
+          std::vector<lv_obj_t*> m_btns = {id(btn_sel_m1), id(btn_sel_m2), id(btn_sel_m3), id(btn_sel_m4), id(btn_sel_m5), id(btn_sel_m6), id(btn_sel_m7), id(btn_sel_m8)};
+          std::vector<lv_obj_t*> h_lbls = {id(lbl_h1), id(lbl_h2), id(lbl_h3), id(lbl_h4), id(lbl_h5), id(lbl_h6), id(lbl_h7), id(lbl_h8)};
+          std::vector<lv_obj_t*> h_btns = {id(btn_sel_h1), id(btn_sel_h2), id(btn_sel_h3), id(btn_sel_h4), id(btn_sel_h5), id(btn_sel_h6), id(btn_sel_h7), id(btn_sel_h8)};
+          std::vector<lv_obj_t*> s_lbls = {id(lbl_slot_1), id(lbl_slot_2), id(lbl_slot_3), id(lbl_slot_4), id(lbl_slot_5), id(lbl_slot_6), id(lbl_slot_7), id(lbl_slot_8)};
+          std::vector<lv_obj_t*> s_btns = {id(btn_slot_1), id(btn_slot_2), id(btn_slot_3), id(btn_slot_4), id(btn_slot_5), id(btn_slot_6), id(btn_slot_7), id(btn_slot_8)};
+
+          const lv_style_selector_t sel_def = (int)LV_PART_MAIN | (int)LV_STATE_DEFAULT;
+          const lv_style_selector_t sel_foc = (int)LV_PART_MAIN | (int)LV_STATE_FOCUSED;
+
+          auto set_btn_col_diff = [&](lv_obj_t *btn, uint32_t hex_col) {
+            lv_color_t target = lv_color_hex(hex_col);
+            lv_color_t cur = lv_obj_get_style_bg_color(btn, LV_PART_MAIN);
+            if (cur.red != target.red || cur.green != target.green || cur.blue != target.blue) {
+              lv_obj_set_style_bg_color(btn, target, sel_def);
+              lv_obj_set_style_bg_color(btn, target, sel_foc);
+            }
           };
-          std::vector<lv_obj_t*> h_btns = {
-            id(btn_sel_h1), id(btn_sel_h2), id(btn_sel_h3), id(btn_sel_h4),
-            id(btn_sel_h5), id(btn_sel_h6), id(btn_sel_h7), id(btn_sel_h8)
+
+          auto set_lbl_diff = [](lv_obj_t *lbl, const std::string &txt) {
+            if (strcmp(lv_label_get_text(lbl), txt.c_str()) != 0) {
+              lv_label_set_text(lbl, txt.c_str());
+            }
           };
+
           for (int i = 0; i < 8; i++) {
-            lv_obj_set_style_bg_color(m_btns.at(i), lv_color_hex(id(editing_mash_step) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
-            lv_obj_set_style_bg_color(h_btns.at(i), lv_color_hex(id(editing_hop_idx) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
+            set_lbl_diff(m_lbls.at(i), "Step " + std::to_string(i + 1) + ": " + std::to_string((int)*active_t.at(i)) + "C • " + std::to_string(*active_m.at(i)) + "m");
+            bool hide_m = id(active_mash_steps) < (i + 1);
+            if (lv_obj_is_hidden(m_btns.at(i)) != hide_m) lv_obj_set_hidden(m_btns.at(i), hide_m);
+            set_btn_col_diff(m_btns.at(i), id(editing_mash_step) == (i + 1) ? 0x1D4ED8 : 0x334155);
+
+            set_lbl_diff(h_lbls.at(i), "Hop " + std::to_string(i + 1) + ": " + std::to_string(*active_h.at(i)) + " min");
+            bool hide_h = id(active_hop_count) < (i + 1);
+            if (lv_obj_is_hidden(h_btns.at(i)) != hide_h) lv_obj_set_hidden(h_btns.at(i), hide_h);
+            set_btn_col_diff(h_btns.at(i), id(editing_hop_idx) == (i + 1) ? 0x1D4ED8 : 0x334155);
+
+            set_lbl_diff(s_lbls.at(i), *s_names.at(i));
+            set_btn_col_diff(s_btns.at(i), id(selected_slot) == (i + 1) ? 0x1D4ED8 : 0x1E293B);
+          }
+
+          int es = id(editing_mash_step);
+          if (es >= 1 && es <= 8) {
+            set_lbl_diff(id(lbl_edit_step_title), "EDITING STEP " + std::to_string(es));
+            set_lbl_diff(id(lbl_edit_step_temp), std::to_string((int)*active_t.at(es - 1)) + " °C");
+            set_lbl_diff(id(lbl_edit_step_time), std::to_string(*active_m.at(es - 1)) + "m");
+          }
+          int eh = id(editing_hop_idx);
+          if (eh >= 1 && eh <= 8) {
+            set_lbl_diff(id(lbl_edit_hop_title), "HOP " + std::to_string(eh) + " ADDITION TIME");
+            set_lbl_diff(id(lbl_edit_hop_time), std::to_string(*active_h.at(eh - 1)) + "m");
+          }
+
+          set_lbl_diff(id(lbl_boil_time_val), "Boil: " + std::to_string(id(boil_time_min)) + " min");
+          set_lbl_diff(id(lbl_boil_pwr_val), "Power: " + std::to_string(id(boil_power_pct)) + "%");
+          set_lbl_diff(id(lbl_slot_selected), "Selected: Slot " + std::to_string(id(selected_slot)));
+
+  - id: update_hardware_highlights
+    then:
+      - lambda: |-
+          const lv_style_selector_t sel_def = (int)LV_PART_MAIN | (int)LV_STATE_DEFAULT;
+          const lv_style_selector_t sel_foc = (int)LV_PART_MAIN | (int)LV_STATE_FOCUSED;
+
+          auto set_btn_active = [&](lv_obj_t *btn, bool active) {
+            lv_color_t col = lv_color_hex(active ? 0x1D4ED8 : 0x1E293B);
+            lv_obj_set_style_bg_color(btn, col, sel_def);
+            lv_obj_set_style_bg_color(btn, col, sel_foc);
+          };
+
+          set_btn_active(id(btn_mod_bm10), id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200);
+          set_btn_active(id(btn_mod_bm20), id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000);
+          set_btn_active(id(btn_mod_bm50), id(num_elements) == 2 && id(element_watts) >= 3200);
+
+          set_btn_active(id(btn_el_1), id(num_elements) == 1);
+          set_btn_active(id(btn_el_2), id(num_elements) == 2);
+
+          set_btn_active(id(btn_pmp_1), id(num_pumps) == 1);
+          set_btn_active(id(btn_pmp_2), id(num_pumps) == 2);
+
+          set_btn_active(id(btn_amp_10), id(max_amps) == 10);
+          set_btn_active(id(btn_amp_13), id(max_amps) == 13);
+          set_btn_active(id(btn_amp_16), id(max_amps) == 16);
+          set_btn_active(id(btn_amp_0),  id(max_amps) == 0);
+
+          set_btn_active(id(btn_swap_probes), id(swap_probes));
+          lv_label_set_text(id(lbl_swap_probes), id(swap_probes) ? "PROBES: SWAP" : "PROBES: NORM");
+          lv_label_set_text(id(lbl_pump_cycle_val), ("Run " + std::to_string(id(pump_run_min)) + "m / Rest " + std::to_string(id(pump_rest_min)) + "m").c_str());
+
+          // Immediately rebuild and update the top Hardware & PID status bar
+          std::string model_lbl = "CUSTOM";
+          if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) model_lbl = "BM10";
+          else if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) model_lbl = "BM20";
+          else if (id(num_elements) == 2 && id(element_watts) >= 3200) model_lbl = "BM50";
+          std::string amp_txt = (id(max_amps) > 0) ? (std::to_string(id(max_amps)) + "A") : "MAX";
+          id(hw_status_text) = model_lbl + " | " + std::to_string(id(element_watts)) + "W | " + std::to_string(id(num_elements)) + " EL | " + std::to_string(id(num_pumps)) + " PMP | " + amp_txt;
+
+          char pid_buf[96];
+          snprintf(pid_buf, sizeof(pid_buf), "%s  |  PID: P=%.3f I=%.4f D=%.2f", id(hw_status_text).c_str(), id(bm_pid).get_kp(), id(bm_pid).get_ki(), id(bm_pid).get_kd());
+          if (strcmp(lv_label_get_text(id(hw_page_status)), pid_buf) != 0) {
+            lv_label_set_text(id(hw_page_status), pid_buf);
           }
 
   - id: sync_recipe_sliders
@@ -34,48 +127,45 @@ script:
     then:
       - lambda: |-
           auto t = BM_TEMPS; auto m = BM_TIMES; auto h = BM_HOPS;
-          std::string packed = std::to_string(id(active_mash_steps));
-          for (int i = 0; i < 8; i++) {
-            packed += "|" + std::to_string((int)*t.at(i)) + "," + std::to_string(*m.at(i));
+          int ms = std::max(1, std::min(8, id(active_mash_steps)));
+          int hc = std::max(0, std::min(8, id(active_hop_count)));
+          std::string packed = std::to_string(ms) + "|";
+          for (int i = 0; i < ms; i++) {
+            if (i > 0) packed += ";";
+            packed += std::to_string((int)*t.at(i)) + "," + std::to_string(*m.at(i));
           }
-          packed += "|" + std::to_string(id(boil_time_min)) + "," + std::to_string(id(boil_power_pct)) + "|" + std::to_string(id(active_hop_count)) + "|";
-          for (int i = 0; i < 8; i++) {
+          packed += "|" + std::to_string(id(boil_time_min)) + "," + std::to_string(id(boil_power_pct)) + "|" + std::to_string(hc) + "|";
+          for (int i = 0; i < hc; i++) {
             if (i > 0) packed += ",";
             packed += std::to_string(*h.at(i));
           }
           int s = id(selected_slot);
-          std::string label_name = "Slot " + std::to_string(s) + ": " + id(recipe_name);
-          if (s == 1) { id(slot1_name) = label_name; id(slot1_data) = packed; }
-          else if (s == 2) { id(slot2_name) = label_name; id(slot2_data) = packed; }
-          else if (s == 3) { id(slot3_name) = label_name; id(slot3_data) = packed; }
-          else if (s == 4) { id(slot4_name) = label_name; id(slot4_data) = packed; }
+          if (s >= 1 && s <= 8) {
+            *BM_SLOT_NAMES.at(s - 1) = "Slot " + std::to_string(s) + ": " + id(recipe_name);
+            *BM_SLOT_DATA.at(s - 1) = packed;
+          }
 
   - id: load_from_selected_slot
     then:
       - lambda: |-
           int s = id(selected_slot);
-          std::string raw = (s == 1) ? id(slot1_data) : (s == 2) ? id(slot2_data) : (s == 3) ? id(slot3_data) : id(slot4_data);
-          std::string rname = (s == 1) ? id(slot1_name) : (s == 2) ? id(slot2_name) : (s == 3) ? id(slot3_name) : id(slot4_name);
+          if (s < 1 || s > 8) s = 1;
+          std::string raw = *BM_SLOT_DATA.at(s - 1);
+          std::string rname = *BM_SLOT_NAMES.at(s - 1);
           size_t colon = rname.find(": ");
           id(recipe_name) = (colon != std::string::npos) ? rname.substr(colon + 2) : rname;
 
-          int ms = 3, t1=63, m1=45, t2=72, m2=15, t3=78, m3=10, t4=65, m4=0, t5=78, m5=0, t6=0, m6=0, t7=0, m7=0, t8=0, m8=0;
-          int bt=60, bp=85, hc=2, h1=60, h2=15, h3=0, h4=0, h5=0, h6=0, h7=0, h8=0;
-          if (sscanf(raw.c_str(), "%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d|%d,%d,%d,%d,%d,%d,%d,%d",
-              &ms, &t1, &m1, &t2, &m2, &t3, &m3, &t4, &m4, &t5, &m5, &t6, &m6, &t7, &m7, &t8, &m8, &bt, &bp, &hc, &h1, &h2, &h3, &h4, &h5, &h6, &h7, &h8) != 28) {
-            sscanf(raw.c_str(), "%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d|%d,%d,%d,%d",
-              &ms, &t1, &m1, &t2, &m2, &t3, &m3, &t4, &m4, &t5, &m5, &bt, &bp, &hc, &h1, &h2, &h3, &h4);
+          auto t = BM_TEMPS; auto m = BM_TIMES; auto h = BM_HOPS;
+          int ms = 1, bt = 60, bp = 85, hc = 0;
+          if (!bm_unpack_recipe(raw, t, m, h, ms, bt, bp, hc)) {
+            ms = 1; *t.at(0) = 65.0f; *m.at(0) = 60;
           }
-
           id(active_mash_steps) = ms;
-          id(mash_temp_1) = t1; id(mash_time_1) = m1; id(mash_temp_2) = t2; id(mash_time_2) = m2;
-          id(mash_temp_3) = t3; id(mash_time_3) = m3; id(mash_temp_4) = t4; id(mash_time_4) = m4;
-          id(mash_temp_5) = t5; id(mash_time_5) = m5; id(mash_temp_6) = t6; id(mash_time_6) = m6;
-          id(mash_temp_7) = t7; id(mash_time_7) = m7; id(mash_temp_8) = t8; id(mash_time_8) = m8;
-          id(boil_time_min) = bt; id(boil_power_pct) = bp; id(active_hop_count) = hc;
-          id(hop_time_1) = h1; id(hop_time_2) = h2; id(hop_time_3) = h3; id(hop_time_4) = h4;
-          id(hop_time_5) = h5; id(hop_time_6) = h6; id(hop_time_7) = h7; id(hop_time_8) = h8;
-          id(editing_mash_step) = 1; id(editing_hop_idx) = 1;
+          id(boil_time_min) = bt;
+          id(boil_power_pct) = bp;
+          id(active_hop_count) = hc;
+          id(editing_mash_step) = 1;
+          id(editing_hop_idx) = 1;
       - script.execute: sync_recipe_sliders
 
   - id: cmd_start_brew
@@ -133,6 +223,7 @@ script:
       - lambda: |-
           id(manual_htr_1) = false;
           id(manual_htr_2) = false;
+          id(hop_alert_sec) = 0;
           id(brew_state) = 3;
           id(seconds_remaining) = id(boil_time_min) * 60;
           id(pump_1).turn_off();
@@ -150,6 +241,7 @@ script:
           id(delay_start_min) = 0;
           id(delay_start_sec) = 0;
           id(autotune_elapsed_sec) = 0;
+          id(hop_alert_sec) = 0;
           id(manual_htr_1) = false;
           id(manual_htr_2) = false;
           id(current_heat_level) = 0.0f;
@@ -163,7 +255,6 @@ script:
           lv_obj_set_hidden(id(step_confirm_modal), true);
           id(status_text) = "ALL STOPPED";
           id(alarm_buzzer).turn_off();
-          id(current_heat_level) = 0.0f;
           id(active_h1_pct) = 0;
           id(active_h2_pct) = 0;
 
@@ -299,6 +390,11 @@ interval:
             else if (cmd == "confirm") id(cmd_confirm_step).execute();
             else if (cmd == "boil") id(cmd_start_boil).execute();
             else if (cmd == "stop") id(cmd_stop_all).execute();
+            else if (cmd == "ack_hop") {
+              id(hop_alert_sec) = 0;
+              id(alarm_buzzer).turn_off();
+              if (id(brew_state) == 3) id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
+            }
             else if (cmd == "delay_add") {
               if (id(brew_state) == 0) {
                 id(delay_start_min) = std::min(720, id(delay_start_min) + 30);
@@ -371,7 +467,14 @@ interval:
             }
           }
 
-          bool need_beep = (id(brew_state) == 6) || (id(status_text).find("ADD HOP") != std::string::npos) || (id(status_text).find("SAFETY") != std::string::npos);
+          if (id(hop_alert_sec) > 0) {
+            id(hop_alert_sec)--;
+            if (id(hop_alert_sec) == 0 && id(brew_state) == 3) {
+              id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
+            }
+          }
+
+          bool need_beep = (id(brew_state) == 6) || (id(hop_alert_sec) > 0) || (id(status_text).find("SAFETY") != std::string::npos);
           if (need_beep && (millis() / 1000) % 2 == 0) {
             id(alarm_buzzer).turn_on();
           } else {
@@ -430,23 +533,34 @@ interval:
             }
           } else if (id(brew_state) == 3) {
             if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 98.5f && id(seconds_remaining) > 0) {
-              id(seconds_remaining)--;
               if (id(seconds_remaining) % 60 == 0) {
                 int mins_left = id(seconds_remaining) / 60;
+                std::string hop_msg = "";
                 for (int i = 0; i < id(active_hop_count) && i < 8; i++) {
                   if (*active_h.at(i) > 0 && *active_h.at(i) == mins_left) {
-                    id(status_text) = "ADD HOP #" + std::to_string(i + 1) + " NOW!";
+                    if (!hop_msg.empty()) hop_msg += " & ";
+                    hop_msg += "#" + std::to_string(i + 1);
                   }
                 }
+                if (!hop_msg.empty()) {
+                  id(hop_alert_sec) = 20;
+                  id(status_text) = "ADD HOP " + hop_msg + " NOW! (TAP TO SILENCE)";
+                } else if (mins_left == id(boil_time_min) && id(hop_alert_sec) == 0) {
+                  id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
+                }
               }
+              id(seconds_remaining)--;
             } else if (id(seconds_remaining) == 0) {
+              id(hop_alert_sec) = 0;
               id(brew_state) = 4;
               auto call = id(bm_pid).make_call();
               call.set_mode("OFF");
               call.perform();
               id(status_text) = "BOIL COMPLETE - READY TO CHILL";
             }
-          } else if (id(brew_state) == 7) {
+          }
+
+           else if (id(brew_state) == 7) {
             if (id(delay_start_sec) > 0) {
               id(delay_start_sec)--;
               int rem_m = (id(delay_start_sec) + 59) / 60;
@@ -479,7 +593,7 @@ interval:
           std::string model_lbl = "CUSTOM";
           if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) model_lbl = "BM10";
           else if (id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) model_lbl = "BM20";
-          else if (id(num_elements) == 2 && id(element_watts) == 3200) model_lbl = "BM50";
+          else if (id(num_elements) == 2 && id(element_watts) >= 3200) model_lbl = "BM50";
           std::string amp_txt = (id(max_amps) > 0) ? (std::to_string(id(max_amps)) + "A") : "MAX";
           id(hw_status_text) = model_lbl + " | " + std::to_string(id(element_watts)) + "W | " + std::to_string(id(num_elements)) + " EL | " + std::to_string(id(num_pumps)) + " PMP | " + amp_txt;
           // =========================================================
@@ -645,21 +759,10 @@ interval:
           // SECTION 4: ACTIVE SCREEN UI — RECIPE, HARDWARE & WIFI PAGES
           // =========================================================
           else if (act_scr == id(recipe_page)->obj) {
-            lv_obj_t* m_lbls[8] = {id(lbl_m1), id(lbl_m2), id(lbl_m3), id(lbl_m4), id(lbl_m5), id(lbl_m6), id(lbl_m7), id(lbl_m8)};
-            lv_obj_t* m_btns[8] = {id(btn_sel_m1), id(btn_sel_m2), id(btn_sel_m3), id(btn_sel_m4), id(btn_sel_m5), id(btn_sel_m6), id(btn_sel_m7), id(btn_sel_m8)};
-            lv_obj_t* h_lbls[8] = {id(lbl_h1), id(lbl_h2), id(lbl_h3), id(lbl_h4), id(lbl_h5), id(lbl_h6), id(lbl_h7), id(lbl_h8)};
-            lv_obj_t* h_btns[8] = {id(btn_sel_h1), id(btn_sel_h2), id(btn_sel_h3), id(btn_sel_h4), id(btn_sel_h5), id(btn_sel_h6), id(btn_sel_h7), id(btn_sel_h8)};
+            id(update_recipe_highlights).execute();
+          }
 
-            for (int i = 0; i < 8; i++) {
-              set_lbl_diff(m_lbls[i], "Step " + std::to_string(i + 1) + ": " + std::to_string((int)*active_t.at(i)) + "C • " + std::to_string(*active_m.at(i)) + "m");
-              set_hid_diff(m_btns[i], id(active_mash_steps) < (i + 1));
-              set_bg_diff(m_btns[i], lv_color_hex(id(editing_mash_step) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
-
-              set_lbl_diff(h_lbls[i], "Hop " + std::to_string(i + 1) + ": " + std::to_string(*active_h.at(i)) + " min");
-              set_hid_diff(h_btns[i], id(active_hop_count) < (i + 1));
-              set_bg_diff(h_btns[i], lv_color_hex(id(editing_hop_idx) == (i + 1) ? 0x1D4ED8 : 0x334155), 0);
-            }
-
+          else if (act_scr == id(hardware_page)->obj) {
             int es = id(editing_mash_step);
             if (es >= 1 && es <= 8) {
               set_lbl_diff(id(lbl_edit_step_title), "EDITING STEP " + std::to_string(es));
@@ -685,25 +788,7 @@ interval:
           }
 
           else if (act_scr == id(hardware_page)->obj) {
-            set_bg_diff(id(btn_mod_bm10), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 1200) ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_mod_bm20), lv_color_hex((id(num_elements) == 1 && id(num_pumps) == 1 && id(element_watts) == 2000) ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_mod_bm50), lv_color_hex((id(num_elements) == 2 && id(element_watts) == 3200) ? 0x1D4ED8 : 0x1E293B), 0);
-
-            set_bg_diff(id(btn_el_1), lv_color_hex(id(num_elements) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_el_2), lv_color_hex(id(num_elements) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-
-            set_bg_diff(id(btn_pmp_1), lv_color_hex(id(num_pumps) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_pmp_2), lv_color_hex(id(num_pumps) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-
-            set_bg_diff(id(btn_amp_10), lv_color_hex(id(max_amps) == 10 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_amp_13), lv_color_hex(id(max_amps) == 13 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_amp_16), lv_color_hex(id(max_amps) == 16 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_amp_0),  lv_color_hex(id(max_amps) == 0  ? 0x1D4ED8 : 0x1E293B), 0);
-
-            set_lbl_diff(id(lbl_pump_cycle_val), "Run " + std::to_string(id(pump_run_min)) + "m / Rest " + std::to_string(id(pump_rest_min)) + "m");
-
-            set_bg_diff(id(btn_swap_probes), lv_color_hex(id(swap_probes) ? 0x1D4ED8 : 0x1E293B), 0);
-            set_lbl_diff(id(lbl_swap_probes), id(swap_probes) ? "PROBES: SWAP" : "PROBES: NORM");
+            id(update_hardware_highlights).execute();
 
             char pid_buf[80];
             snprintf(pid_buf, sizeof(pid_buf), "%s  |  PID: P=%.3f I=%.4f D=%.2f", id(hw_status_text).c_str(), id(bm_pid).get_kp(), id(bm_pid).get_ki(), id(bm_pid).get_kd());

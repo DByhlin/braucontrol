@@ -23,6 +23,17 @@ esphome:
           lv_obj_set_style_bg_color(tb, lv_color_hex(0x1E293B), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
           lv_obj_set_style_text_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
           lv_obj_set_style_border_color(tb, lv_color_hex(0x38BDF8), (int)LV_PART_ITEMS | (int)LV_STATE_CHECKED);
+          // Sync Web UI dropdowns with restored flash globals
+          if (id(num_elements) == 1 && id(element_watts) == 1200) id(web_bm_model).publish_state("BM10 (1200W)");
+          else if (id(num_elements) == 1 && id(element_watts) == 2000) id(web_bm_model).publish_state("BM20 (2000W)");
+          else if (id(num_elements) == 2 && id(num_pumps) == 1) id(web_bm_model).publish_state("BM50 1-Pump (3300W)");
+          else id(web_bm_model).publish_state("BM50 2-Pump (3300W)");
+
+          if (id(max_amps) == 10) id(web_fuse_limit).publish_state("10A (2.3kW)");
+          else if (id(max_amps) == 13) id(web_fuse_limit).publish_state("13A (3.0kW)");
+          else if (id(max_amps) == 16) id(web_fuse_limit).publish_state("16A (3.6kW)");
+          else id(web_fuse_limit).publish_state("MAX / Unlimited");
+
       - delay: 12s
       - if:
           condition:
@@ -35,6 +46,9 @@ esphome:
             - delay: 1s
             - lvgl.widget.hide: boot_screen
   min_version: "2026.1.0"
+
+preferences:
+  flash_write_interval: 5s
 
 esp32:
   variant: esp32s3
@@ -409,7 +423,7 @@ globals:
   - id: recipe_name
     type: std::string
     restore_value: yes
-    initial_value: '"Custom Braumeister Brew"'
+    initial_value: '"German Pilsner"'
   - id: status_text
     type: std::string
     initial_value: '"IDLE - READY TO BREW"'
@@ -440,6 +454,7 @@ globals:
     initial_value: '2'
   - id: selected_slot
     type: int
+    restore_value: yes
     initial_value: '1'
   - id: editing_mash_step
     type: int
@@ -504,22 +519,54 @@ globals:
     type: std::string
     restore_value: yes
     initial_value: '"Slot 4: Empty Preset"'
+  - id: slot5_name
+    type: std::string
+    restore_value: yes
+    initial_value: '"Slot 5: Empty Preset"'
+  - id: slot6_name
+    type: std::string
+    restore_value: yes
+    initial_value: '"Slot 6: Empty Preset"'
+  - id: slot7_name
+    type: std::string
+    restore_value: yes
+    initial_value: '"Slot 7: Empty Preset"'
+  - id: slot8_name
+    type: std::string
+    restore_value: yes
+    initial_value: '"Slot 8: Empty Preset"'
   - id: slot1_data
     type: std::string
     restore_value: yes
-    initial_value: '"3|63,45|72,15|78,10|0,0|0,0|0,0|0,0|0,0|60,85|2|60,15,0,0,0,0,0,0"'
+    initial_value: '"3|63,45;72,15;78,10|60,85|2|60,15"'
   - id: slot2_data
     type: std::string
     restore_value: yes
-    initial_value: '"2|65,60|78,10|0,0|0,0|0,0|0,0|0,0|0,0|60,85|3|60,15,5,0,0,0,0,0"'
+    initial_value: '"2|65,60;78,10|60,85|3|60,15,5"'
   - id: slot3_data
     type: std::string
     restore_value: yes
-    initial_value: '"4|45,15|52,15|63,35|72,20|0,0|0,0|0,0|0,0|60,85|1|60,0,0,0,0,0,0,0"'
+    initial_value: '"4|45,15;52,15;63,35;72,20|60,85|1|60"'
   - id: slot4_data
     type: std::string
     restore_value: yes
-    initial_value: '"1|65,60|0,0|0,0|0,0|0,0|0,0|0,0|0,0|60,85|0|0,0,0,0,0,0,0,0"'
+    initial_value: '"1|65,60|60,85|0|"'
+  - id: slot5_data
+    type: std::string
+    restore_value: yes
+    initial_value: '"1|65,60|60,85|0|"'
+  - id: slot6_data
+    type: std::string
+    restore_value: yes
+    initial_value: '"1|65,60|60,85|0|"'
+  - id: slot7_data
+    type: std::string
+    restore_value: yes
+    initial_value: '"1|65,60|60,85|0|"'
+  - id: slot8_data
+    type: std::string
+    restore_value: yes
+    initial_value: '"1|65,60|60,85|0|"'
   - id: pid_kp
     type: float
     restore_value: yes
@@ -560,6 +607,9 @@ globals:
   - id: active_h2_pct
     type: int
     initial_value: '0'
+  - id: hop_alert_sec
+    type: int
+    initial_value: '0'
 
 switch:
   - platform: gpio
@@ -593,7 +643,7 @@ switch:
   - platform: template
     name: "Swap Temp Probes (Kettle <-> Aux)"
     id: web_swap_probes
-    restore_mode: RESTORE_DEFAULT_OFF
+    restore_mode: DISABLED
     web_server:
       sorting_group_id: grp_hardware
       sorting_weight: 5
@@ -624,114 +674,27 @@ text:
     optimistic: true
     on_value:
       - lambda: |-
-          if (x.rfind("PACKED|", 0) == 0) {
-            size_t p1 = 7;
-            size_t p2 = x.find('|', p1);
-            if (p2 != std::string::npos) {
-              id(recipe_name) = x.substr(p1, p2 - p1);
-              std::string rest = x.substr(p2 + 1);
-              int ms = 1, t1=63, m1=45, t2=0, m2=0, t3=0, m3=0, t4=0, m4=0, t5=0, m5=0, t6=0, m6=0, t7=0, m7=0, t8=0, m8=0;
-              int bt=60, bp=85, hc=0, h1=0, h2=0, h3=0, h4=0, h5=0, h6=0, h7=0, h8=0;
-              if (sscanf(rest.c_str(), "%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d,%d|%d|%d,%d,%d,%d,%d,%d,%d,%d",
-                  &ms, &t1, &m1, &t2, &m2, &t3, &m3, &t4, &m4, &t5, &m5, &t6, &m6, &t7, &m7, &t8, &m8, &bt, &bp, &hc, &h1, &h2, &h3, &h4, &h5, &h6, &h7, &h8) == 28) {
-                id(active_mash_steps) = ms;
-                id(mash_temp_1) = t1; id(mash_time_1) = m1;
-                id(mash_temp_2) = t2; id(mash_time_2) = m2;
-                id(mash_temp_3) = t3; id(mash_time_3) = m3;
-                id(mash_temp_4) = t4; id(mash_time_4) = m4;
-                id(mash_temp_5) = t5; id(mash_time_5) = m5;
-                id(mash_temp_6) = t6; id(mash_time_6) = m6;
-                id(mash_temp_7) = t7; id(mash_time_7) = m7;
-                id(mash_temp_8) = t8; id(mash_time_8) = m8;
-                id(boil_time_min) = bt;
-                id(boil_power_pct) = bp;
-                id(active_hop_count) = hc;
-                id(hop_time_1) = h1; id(hop_time_2) = h2; id(hop_time_3) = h3; id(hop_time_4) = h4;
-                id(hop_time_5) = h5; id(hop_time_6) = h6; id(hop_time_7) = h7; id(hop_time_8) = h8;
-                id(editing_mash_step) = 1;
-                id(editing_hop_idx) = 1;
-                id(status_text) = "LOADED: " + id(recipe_name);
-                lv_textarea_set_text(id(recipe_name_ta), id(recipe_name).c_str());
-                id(update_recipe_highlights).execute();
-              }
-            }
-            return;
-          }
-
-          auto get_tag = [](const std::string &src, const std::string &tag, size_t start_pos = 0) -> std::string {
-            std::string open_t = "<" + tag + ">";
-            std::string close_t = "</" + tag + ">";
-            size_t p1 = src.find(open_t, start_pos);
-            if (p1 == std::string::npos) return "";
-            p1 += open_t.length();
-            size_t p2 = src.find(close_t, p1);
-            if (p2 == std::string::npos) return "";
-            return src.substr(p1, p2 - p1);
-          };
-
-          std::string xml = x;
-          if (xml.find("<RECIPE>") == std::string::npos && xml.find("<MASH_STEP>") == std::string::npos) return;
-
-          std::string r_name = get_tag(xml, "NAME");
-          if (!r_name.empty()) id(recipe_name) = r_name;
-
-          std::string b_time = get_tag(xml, "BOIL_TIME");
-          if (!b_time.empty()) id(boil_time_min) = (int)bm_safe_stof(b_time);
-
-          std::vector<float> m_temps(8, 0.0f);
-          std::vector<int> m_times(8, 0);
-          size_t pos = 0;
-          int step_idx = 0;
-          while (step_idx < 8 && (pos = xml.find("<MASH_STEP>", pos)) != std::string::npos) {
-            size_t end_step = xml.find("</MASH_STEP>", pos);
-            if (end_step == std::string::npos) break;
-            std::string block = xml.substr(pos, end_step - pos);
-            std::string st_temp = get_tag(block, "STEP_TEMP");
-            std::string st_time = get_tag(block, "STEP_TIME");
-            if (!st_temp.empty()) m_temps.at(step_idx) = bm_safe_stof(st_temp);
-            if (!st_time.empty()) m_times.at(step_idx) = (int)bm_safe_stof(st_time);
-            step_idx++;
-            pos = end_step + 12;
-          }
-          id(active_mash_steps) = (step_idx > 0) ? step_idx : 1;
-          id(mash_temp_1) = m_temps.at(0); id(mash_time_1) = m_times.at(0);
-          id(mash_temp_2) = m_temps.at(1); id(mash_time_2) = m_times.at(1);
-          id(mash_temp_3) = m_temps.at(2); id(mash_time_3) = m_times.at(2);
-          id(mash_temp_4) = m_temps.at(3); id(mash_time_4) = m_times.at(3);
-          id(mash_temp_5) = m_temps.at(4); id(mash_time_5) = m_times.at(4);
-          id(mash_temp_6) = m_temps.at(5); id(mash_time_6) = m_times.at(5);
-          id(mash_temp_7) = m_temps.at(6); id(mash_time_7) = m_times.at(6);
-          id(mash_temp_8) = m_temps.at(7); id(mash_time_8) = m_times.at(7);
-
-          std::vector<int> h_times(8, 0);
-          pos = 0;
-          int hop_idx = 0;
-          while (hop_idx < 8 && (pos = xml.find("<HOP>", pos)) != std::string::npos) {
-            size_t end_hop = xml.find("</HOP>", pos);
-            if (end_hop == std::string::npos) break;
-            std::string block = xml.substr(pos, end_hop - pos);
-            std::string h_use = get_tag(block, "USE");
-            std::string h_time = get_tag(block, "TIME");
-            if ((h_use == "Boil" || h_use == "First Wort") && !h_time.empty()) {
-              h_times.at(hop_idx) = (int)bm_safe_stof(h_time);
-              hop_idx++;
-            }
-            pos = end_hop + 6;
-          }
-          id(active_hop_count) = hop_idx;
-          id(hop_time_1) = h_times.at(0);
-          id(hop_time_2) = h_times.at(1);
-          id(hop_time_3) = h_times.at(2);
-          id(hop_time_4) = h_times.at(3);
-          id(hop_time_5) = h_times.at(4);
-          id(hop_time_6) = h_times.at(5);
-          id(hop_time_7) = h_times.at(6);
-          id(hop_time_8) = h_times.at(7);
-
-          id(editing_mash_step) = 1;
-          id(editing_hop_idx) = 1;
-          id(status_text) = "LOADED: " + id(recipe_name);
-      - script.execute: sync_recipe_sliders
+         if (x.rfind("PACKED|", 0) == 0) {
+         size_t p1 = 7;
+         size_t p2 = x.find('|', p1);
+         if (p2 != std::string::npos) {
+           id(recipe_name) = x.substr(p1, p2 - p1);
+           std::string rest = x.substr(p2 + 1);
+           auto t = BM_TEMPS; auto m = BM_TIMES; auto h = BM_HOPS;
+           int ms = 1, bt = 60, bp = 85, hc = 0;
+           if (bm_unpack_recipe(rest, t, m, h, ms, bt, bp, hc)) {
+             id(active_mash_steps) = ms;
+             id(boil_time_min) = bt;
+             id(boil_power_pct) = bp;
+             id(active_hop_count) = hc;
+             id(editing_mash_step) = 1;
+             id(editing_hop_idx) = 1;
+             id(status_text) = "LOADED: " + id(recipe_name);
+             id(sync_recipe_sliders).execute();
+           }
+         }
+         return;
+         }
 
 text_sensor:
   - platform: template
@@ -824,6 +787,7 @@ select:
 
   - platform: template
     name: "Braumeister Model"
+    id: web_bm_model
     optimistic: true
     web_server:
       sorting_group_id: grp_hardware
@@ -870,6 +834,7 @@ select:
 
   - platform: template
     name: "230V Fuse Limit"
+    id: web_fuse_limit
     optimistic: true
     web_server:
       sorting_group_id: grp_hardware

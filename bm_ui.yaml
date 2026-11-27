@@ -239,6 +239,7 @@ lvgl:
             border_color: 0x1F2937
             radius: 16
             on_click:
+              - script.execute: sync_recipe_sliders
               - lvgl.page.show:
                   id: recipe_page
                   animation: NONE
@@ -336,6 +337,7 @@ lvgl:
             border_color: 0x1F2937
             radius: 16
             on_click:
+              - script.execute: update_hardware_highlights
               - lvgl.page.show:
                   id: hardware_page
                   animation: NONE
@@ -989,6 +991,7 @@ lvgl:
                         id(manual_htr_2) = false;
                         id(heater_2_pwm).set_level(0.0f);
                         id(pump_2).turn_off();
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1007,6 +1010,7 @@ lvgl:
                         id(manual_htr_2) = false;
                         id(heater_2_pwm).set_level(0.0f);
                         id(pump_2).turn_off();
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1019,10 +1023,12 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3300;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
                         text: "BM50 (3.3kW)"
+
               # Row 2: Heating Elements & Circulation Pumps
               - label:
                   x: 22
@@ -1041,6 +1047,7 @@ lvgl:
                         if (id(element_watts) > 2000) id(element_watts) = 2000;
                         id(manual_htr_2) = false;
                         id(heater_2_pwm).set_level(0.0f);
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1053,6 +1060,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(num_elements) = 2; id(element_watts) = 3300;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1071,6 +1079,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1083,6 +1092,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(num_pumps) = 2;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1102,6 +1112,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(max_amps) = 10;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1114,6 +1125,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(max_amps) = 13;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1126,6 +1138,7 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(max_amps) = 16;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1138,12 +1151,13 @@ lvgl:
                   height: 44
                   on_click:
                     - lambda: 'id(max_amps) = 0;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
                         text: "MAX / OFF"
 
-              # Row 4: Custom Pump Run / Rest Intervals
+              # Row 4: Custom Pump Run / Rest Intervals & Probe Swap
               - label:
                   x: 22
                   y: 182
@@ -1156,6 +1170,7 @@ lvgl:
                   height: 38
                   on_click:
                     - lambda: 'if (id(pump_run_min) > 1) id(pump_run_min) -= 1;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1167,6 +1182,7 @@ lvgl:
                   height: 38
                   on_click:
                     - lambda: 'if (id(pump_run_min) < 30) id(pump_run_min) += 1;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1184,6 +1200,7 @@ lvgl:
                   height: 38
                   on_click:
                     - lambda: 'if (id(pump_rest_min) > 0) id(pump_rest_min) -= 1;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1195,6 +1212,7 @@ lvgl:
                   height: 38
                   on_click:
                     - lambda: 'if (id(pump_rest_min) < 10) id(pump_rest_min) += 1;'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         align: CENTER
@@ -1208,6 +1226,7 @@ lvgl:
                   bg_color: 0x1E293B
                   on_click:
                     - lambda: 'id(swap_probes) = !id(swap_probes);'
+                    - script.execute: update_hardware_highlights
                   widgets:
                     - label:
                         id: lbl_swap_probes
@@ -1373,6 +1392,10 @@ lvgl:
             border_color: 0x1F2937
             radius: 14
             clip_corner: true
+            anim_duration: 0s
+            on_value:
+              - script.execute: update_recipe_highlights
+
             tabs:
               - name: "MASH STEPS"
                 pad_all: 8
@@ -1436,6 +1459,7 @@ lvgl:
                             id: btn_sel_m4
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_mash_step) = 4;'
                               - script.execute: update_recipe_highlights
@@ -1449,6 +1473,7 @@ lvgl:
                             id: btn_sel_m5
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_mash_step) = 5;'
                               - script.execute: update_recipe_highlights
@@ -1462,6 +1487,7 @@ lvgl:
                             id: btn_sel_m6
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_mash_step) = 6;'
                               - script.execute: update_recipe_highlights
@@ -1475,6 +1501,7 @@ lvgl:
                             id: btn_sel_m7
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_mash_step) = 7;'
                               - script.execute: update_recipe_highlights
@@ -1488,6 +1515,7 @@ lvgl:
                             id: btn_sel_m8
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_mash_step) = 8;'
                               - script.execute: update_recipe_highlights
@@ -1856,6 +1884,7 @@ lvgl:
                             id: btn_sel_h3
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 3;'
                               - script.execute: update_recipe_highlights
@@ -1869,6 +1898,7 @@ lvgl:
                             id: btn_sel_h4
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 4;'
                               - script.execute: update_recipe_highlights
@@ -1882,6 +1912,7 @@ lvgl:
                             id: btn_sel_h5
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 5;'
                               - script.execute: update_recipe_highlights
@@ -1895,6 +1926,7 @@ lvgl:
                             id: btn_sel_h6
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 6;'
                               - script.execute: update_recipe_highlights
@@ -1908,6 +1940,7 @@ lvgl:
                             id: btn_sel_h7
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 7;'
                               - script.execute: update_recipe_highlights
@@ -1921,6 +1954,7 @@ lvgl:
                             id: btn_sel_h8
                             width: 248
                             height: 44
+                            hidden: true
                             on_click:
                               - lambda: 'id(editing_hop_idx) = 8;'
                               - script.execute: update_recipe_highlights
@@ -2054,15 +2088,17 @@ lvgl:
                 pad_all: 8
                 scrollable: false
                 widgets:
+                  # Row 1: Slots 1 & 2
                   - button:
                       id: btn_slot_1
-                      x: 10
-                      y: 10
-                      width: 355
-                      height: 56
+                      x: 6
+                      y: 4
+                      width: 358
+                      height: 44
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 1;'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             id: lbl_slot_1
@@ -2071,28 +2107,32 @@ lvgl:
                             text: "Slot 1: German Pilsner"
                   - button:
                       id: btn_slot_2
-                      x: 377
-                      y: 10
-                      width: 355
-                      height: 56
+                      x: 376
+                      y: 4
+                      width: 358
+                      height: 44
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 2;'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             id: lbl_slot_2
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "Slot 2: West Coast IPA"
+
+                  # Row 2: Slots 3 & 4
                   - button:
                       id: btn_slot_3
-                      x: 10
-                      y: 78
-                      width: 355
-                      height: 56
+                      x: 6
+                      y: 54
+                      width: 358
+                      height: 44
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 3;'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             id: lbl_slot_3
@@ -2101,53 +2141,134 @@ lvgl:
                             text: "Slot 3: Hefeweizen"
                   - button:
                       id: btn_slot_4
-                      x: 377
-                      y: 78
-                      width: 355
-                      height: 56
+                      x: 376
+                      y: 54
+                      width: 358
+                      height: 44
                       bg_color: 0x1E293B
                       on_click:
                         - lambda: 'id(selected_slot) = 4;'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             id: lbl_slot_4
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "Slot 4: Empty Preset"
+
+                  # Row 3: Slots 5 & 6
+                  - button:
+                      id: btn_slot_5
+                      x: 6
+                      y: 104
+                      width: 358
+                      height: 44
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 5;'
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            id: lbl_slot_5
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 5: Empty Preset"
+                  - button:
+                      id: btn_slot_6
+                      x: 376
+                      y: 104
+                      width: 358
+                      height: 44
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 6;'
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            id: lbl_slot_6
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 6: Empty Preset"
+
+                  # Row 4: Slots 7 & 8
+                  - button:
+                      id: btn_slot_7
+                      x: 6
+                      y: 154
+                      width: 358
+                      height: 44
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 7;'
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            id: lbl_slot_7
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 7: Empty Preset"
+                  - button:
+                      id: btn_slot_8
+                      x: 376
+                      y: 154
+                      width: 358
+                      height: 44
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(selected_slot) = 8;'
+                        - script.execute: update_recipe_highlights
+                      widgets:
+                        - label:
+                            id: lbl_slot_8
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "Slot 8: Empty Preset"
+
+                  # Row 5: Selection Label & Factory Reset
                   - label:
                       id: lbl_slot_selected
-                      x: 14
-                      y: 156
+                      x: 10
+                      y: 215
                       text_color: 0xA78BFA
                       text: "Selected: Slot 1"
                   - button:
-                      x: 532
-                      y: 146
+                      x: 534
+                      y: 206
                       width: 200
-                      height: 38
+                      height: 36
                       bg_color: 0x334155
                       on_click:
                         - lambda: |-
                             id(slot1_name) = "Slot 1: German Pilsner";
-                            id(slot1_data) = "3|63,45|72,15|78,10|0,0|0,0|0,0|0,0|0,0|60,85|2|60,15,0,0,0,0,0,0";
+                            id(slot1_data) = "3|63,45;72,15;78,10|60,85|2|60,15";
                             id(slot2_name) = "Slot 2: West Coast IPA";
-                            id(slot2_data) = "2|65,60|78,10|0,0|0,0|0,0|0,0|0,0|0,0|60,85|3|60,15,5,0,0,0,0,0";
+                            id(slot2_data) = "2|65,60;78,10|60,85|3|60,15,5";
                             id(slot3_name) = "Slot 3: Hefeweizen";
-                            id(slot3_data) = "4|45,15|52,15|63,35|72,20|0,0|0,0|0,0|0,0|60,85|1|60,0,0,0,0,0,0,0";
+                            id(slot3_data) = "4|45,15;52,15;63,35;72,20|60,85|1|60";
                             id(slot4_name) = "Slot 4: Empty Preset";
-                            id(slot4_data) = "1|65,60|0,0|0,0|0,0|0,0|0,0|0,0|0,0|60,85|0|0,0,0,0,0,0,0,0";
+                            id(slot4_data) = "1|65,60|60,85|0|";
+                            id(slot5_name) = "Slot 5: Empty Preset";
+                            id(slot5_data) = "1|65,60|60,85|0|";
+                            id(slot6_name) = "Slot 6: Empty Preset";
+                            id(slot6_data) = "1|65,60|60,85|0|";
+                            id(slot7_name) = "Slot 7: Empty Preset";
+                            id(slot7_data) = "1|65,60|60,85|0|";
+                            id(slot8_name) = "Slot 8: Empty Preset";
+                            id(slot8_data) = "1|65,60|60,85|0|";
                             id(status_text) = "FACTORY RECIPE SLOTS RESTORED";
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "RESET DEFAULTS"
 
+                  # Row 6: Load & Save Primary Buttons
                   - button:
-                      x: 10
-                      y: 196
-                      width: 355
-                      height: 82
+                      x: 6
+                      y: 250
+                      width: 358
+                      height: 62
                       bg_color: 0x059669
                       border_width: 2
                       border_color: 0x34D399
@@ -2155,16 +2276,17 @@ lvgl:
                       on_click:
                         - script.execute: load_from_selected_slot
                         - lambda: 'id(status_text) = "LOADED: " + id(recipe_name);'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "LOAD SELECTED RECIPE"
                   - button:
-                      x: 377
-                      y: 196
-                      width: 355
-                      height: 82
+                      x: 376
+                      y: 250
+                      width: 358
+                      height: 62
                       bg_color: 0x1D4ED8
                       border_width: 2
                       border_color: 0x3B82F6
@@ -2173,11 +2295,13 @@ lvgl:
                         - lambda: 'id(recipe_name) = lv_textarea_get_text(id(recipe_name_ta));'
                         - script.execute: save_to_selected_slot
                         - lambda: 'id(status_text) = "SAVED TO SLOT " + std::to_string(id(selected_slot));'
+                        - script.execute: update_recipe_highlights
                       widgets:
                         - label:
                             align: CENTER
                             text_color: 0xFFFFFF
                             text: "SAVE CURRENT TO SLOT"
+
               - name: "BEERXML"
                 pad_all: 8
                 scrollable: false
