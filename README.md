@@ -66,7 +66,7 @@ BrauControl runs a 1-second hardware watchdog loop across both **automated brewi
 
 ## Repository Structure
 
-* `braumeister-googleai.yaml` — Main ESPHome configuration, hardware pins, dual-probe temperature blending, PID climate controller, and persistent globals.
+* `bm_braucontrol.yaml` — Main ESPHome configuration, hardware pins, dual-probe temperature blending, PID climate controller, and persistent globals.
 * `bm_ui.yaml` — LVGL 800×480 touchscreen interface (Home, Brew Session, Recipe Builder, Hardware Setup, Wi-Fi Settings).
 * `bm_scripts.yaml` — Brew state machine, sliding-window safety interlocks, Safe-Pause recovery, PID auto-tune handler, power-loss recovery, and `/brewcontrol` web API.
 * `braumeister_helpers.h` — Embedded HTML/JS web dashboard, BeerXML parser, and C++ recipe/list helper functions.
@@ -80,7 +80,7 @@ BrauControl runs a 1-second hardware watchdog loop across both **automated brewi
 2. Place all five source files in your ESPHome configuration directory.
 3. Compile and flash via USB-C for the initial install:
    ```bash
-   esphome run braumeister-googleai.yaml
+   esphome run bm_braucontrol.yaml
    ```
 4. Once booted, tap **WIFI SETTINGS** on the touchscreen to connect to your 2.4 GHz network, then open `http://<CONTROLLER-IP>/brewcontrol` in any browser to upload BeerXML recipes or monitor your brew remotely.
 
