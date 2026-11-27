@@ -14,6 +14,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - Circuit breaker adaptation; you can set your circuit braker amperage and the software will compensate for this. Mainly used for the BM50.
 - Only using the weaker element (1.3kw) to hold temperature during mash (only applies to BM50). This minimizes the risk for scorching during mash.
 - OTA firmware updates (manually upload the .bin through a web interface)
+- Power loss recovery, if the controller loses power during a brew, it has a chance to resume after restarting.
 
 
 # Hardware that you need (total cost about 100USD):
