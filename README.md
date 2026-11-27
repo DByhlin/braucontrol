@@ -11,6 +11,7 @@ Universal ESP32-S3 7 inch touchscreen brewing firmware. Can be used to replace t
 - Confirm before starting the next step in the brew session.
 - Presets for different Braumeister models.
 - Circuit breaker adaptation; you can set your circuit braker amperage and the software will compensate for this. Mainly used for the BM50.
+- Only using the weaker element (1.3kw) to hold temperature during mash (only applies to BM50). This minimizes the risk for scorching during mash.
 
 
 # Hardware that you need (total cost about 100USD):
