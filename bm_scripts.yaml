@@ -175,6 +175,7 @@ script:
           id(manual_htr_2) = false;
           if (id(brew_state) == 0 && id(delay_start_min) > 0) {
             id(delay_start_sec) = id(delay_start_min) * 60;
+            id(saved_delay_sec) = id(delay_start_sec);
             id(delay_start_min) = 0;
             id(brew_state) = 7;
             id(pump_1).turn_off();
@@ -188,9 +189,11 @@ script:
           if (id(brew_state) == 0 || id(brew_state) == 4 || id(brew_state) == 7) {
             id(current_step) = 1;
             id(seconds_remaining) = id(mash_time_1) * 60;
+            id(saved_seconds_rem) = id(seconds_remaining);
             id(pump_cycle_sec) = 0;
             id(delay_start_min) = 0;
             id(delay_start_sec) = 0;
+            id(saved_delay_sec) = 0;
           }
           id(brew_state) = 1;
           id(status_text) = "MASHING: " + id(recipe_name);
@@ -203,9 +206,11 @@ script:
             id(current_step)++;
             if (id(current_step) <= id(active_mash_steps) && id(current_step) <= 8 && *active_m.at(id(current_step) - 1) > 0) {
               id(seconds_remaining) = (*active_m.at(id(current_step) - 1)) * 60;
+              id(saved_seconds_rem) = id(seconds_remaining);
               id(brew_state) = 1;
               id(status_text) = "MASH STEP " + std::to_string(id(current_step)) + " OF " + std::to_string(id(active_mash_steps));
             } else {
+              id(saved_seconds_rem) = 0;
               id(brew_state) = 2;
               id(pump_1).turn_off();
               id(pump_2).turn_off();
@@ -226,6 +231,7 @@ script:
           id(hop_alert_sec) = 0;
           id(brew_state) = 3;
           id(seconds_remaining) = id(boil_time_min) * 60;
+          id(saved_seconds_rem) = id(seconds_remaining);
           id(pump_1).turn_off();
           id(pump_2).turn_off();
           auto call = id(bm_pid).make_call();
@@ -240,6 +246,8 @@ script:
           id(brew_state) = 0;
           id(delay_start_min) = 0;
           id(delay_start_sec) = 0;
+          id(saved_delay_sec) = 0;
+          id(saved_seconds_rem) = 0;
           id(autotune_elapsed_sec) = 0;
           id(hop_alert_sec) = 0;
           id(manual_htr_1) = false;
@@ -257,6 +265,72 @@ script:
           id(alarm_buzzer).turn_off();
           id(active_h1_pct) = 0;
           id(active_h2_pct) = 0;
+          id(runaway_sec) = 0;
+
+  - id: restore_brew_session
+    then:
+      - lambda: |-
+          id(seconds_remaining) = id(saved_seconds_rem);
+          id(delay_start_sec) = id(saved_delay_sec);
+          int st = id(brew_state);
+          if (st == 5) {
+            id(brew_state) = 0;
+            id(autotune_elapsed_sec) = 0;
+            id(status_text) = "IDLE - READY TO BREW";
+            return;
+          }
+          if (st == 1) {
+            auto active_t = BM_TEMPS;
+            auto active_m = BM_TIMES;
+            int cs = id(current_step);
+            if (cs >= 1 && cs <= id(active_mash_steps) && cs <= 8 && *active_m.at(cs - 1) > 0) {
+              if (id(seconds_remaining) <= 0) id(seconds_remaining) = (*active_m.at(cs - 1)) * 60;
+              float target_t = *active_t.at(cs - 1);
+              auto call = id(bm_pid).make_call();
+              call.set_target_temperature(target_t);
+              call.set_mode("HEAT");
+              call.perform();
+              id(pump_cycle_sec) = 0;
+              id(status_text) = "RESUMED MASH STEP " + std::to_string(cs) + " (PWR LOSS)";
+            } else {
+              id(brew_state) = 0;
+            }
+          } else if (st == 6) {
+            auto active_t = BM_TEMPS;
+            auto active_m = BM_TIMES;
+            int cs = id(current_step);
+            id(status_text) = "STEP " + std::to_string(cs) + " DONE - TAP CONTINUE";
+            lv_label_set_text(id(lbl_modal_title), ("STEP " + std::to_string(cs) + " COMPLETE!").c_str());
+            if (cs < id(active_mash_steps) && cs < 8 && *active_m.at(cs) > 0) {
+              lv_label_set_text(id(lbl_modal_body), ("Next: Step " + std::to_string(cs + 1) + " (" + std::to_string((int)*active_t.at(cs)) + "C for " + std::to_string(*active_m.at(cs)) + "m)").c_str());
+            } else {
+              lv_label_set_text(id(lbl_modal_body), "All mash steps finished! Tap CONTINUE to finish mash.");
+            }
+            lv_obj_set_hidden(id(step_confirm_modal), false);
+          } else if (st == 2) {
+            id(pump_1).turn_off();
+            id(pump_2).turn_off();
+            id(status_text) = "MASH DONE! LIFT PIPE -> PRESS BOIL";
+          } else if (st == 3) {
+            if (id(seconds_remaining) <= 0) id(seconds_remaining) = id(boil_time_min) * 60;
+            id(pump_1).turn_off();
+            id(pump_2).turn_off();
+            auto call = id(bm_pid).make_call();
+            call.set_target_temperature(100.0f);
+            call.set_mode("HEAT");
+            call.perform();
+            id(status_text) = "RESUMED BOIL PHASE (PWR LOSS)";
+          } else if (st == 7) {
+            if (id(delay_start_sec) > 0) {
+              id(pump_1).turn_off();
+              id(pump_2).turn_off();
+              id(status_text) = "RESUMED DELAYED START (PWR LOSS)";
+            } else {
+              id(cmd_start_brew).execute();
+            }
+          } else if (st == 4) {
+            id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+          }
 
   - id: register_beerxml_uploader
     mode: single
@@ -394,12 +468,12 @@ interval:
               id(hop_alert_sec) = 0;
               id(alarm_buzzer).turn_off();
               if (id(brew_state) == 3) id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
-            }
-            else if (cmd == "delay_add") {
+            } else if (cmd == "delay_add") {
               if (id(brew_state) == 0) {
                 id(delay_start_min) = std::min(720, id(delay_start_min) + 30);
               } else if (id(brew_state) == 7) {
                 id(delay_start_sec) = std::min(43200, id(delay_start_sec) + 1800);
+                id(saved_delay_sec) = id(delay_start_sec);
               }
             } else if (cmd == "delay_clr") {
               id(delay_start_min) = 0;
@@ -467,6 +541,42 @@ interval:
             }
           }
 
+          // =========================================================
+          // DRY-FIRE & DETACHED PROBE PROTECTION
+          // =========================================================
+          bool heaters_active = (id(brew_state) == 0)
+              ? (id(manual_htr_1) || id(manual_htr_2))
+              : ((id(active_h1_pct) + id(active_h2_pct)) >= 80);
+
+          if (heaters_active && !std::isnan(id(kettle_temp).state)) {
+            if (id(runaway_sec) == 0) {
+              id(runaway_ref_temp) = id(kettle_temp).state;
+            }
+            id(runaway_sec)++;
+
+            // 1. Dry-Fire Check: > 3.5C spike within 10 seconds
+            if (id(runaway_sec) <= 10) {
+              if ((id(kettle_temp).state - id(runaway_ref_temp)) > 3.5f) {
+                id(cmd_stop_all).execute();
+                id(status_text) = "SAFETY STOP: DRY-FIRE / RAPID SPIKE!";
+                return;
+              }
+            }
+
+            // 2. Detached Probe Check: < 0.5C rise after 180s (3 min) of high power (below 96C)
+            if (id(runaway_sec) >= 180) {
+              if (id(kettle_temp).state < 96.0f && (id(kettle_temp).state - id(runaway_ref_temp)) < 0.5f) {
+                id(cmd_stop_all).execute();
+                id(status_text) = "SAFETY STOP: NO TEMP RISE (CHECK PROBE)!";
+                return;
+              }
+              // Reset 3-minute sliding window
+              id(runaway_sec) = 0;
+            }
+          } else {
+            id(runaway_sec) = 0;
+          }
+
           if (id(hop_alert_sec) > 0) {
             id(hop_alert_sec)--;
             if (id(hop_alert_sec) == 0 && id(brew_state) == 3) {
@@ -516,11 +626,13 @@ interval:
               id(pump_cycle_sec) = 0;
             }
 
-            if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= (target_t - 0.5f)) {
-              if (id(seconds_remaining) > 0) {
-                id(seconds_remaining)--;
-              } else {
-                id(brew_state) = 6;
+          if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= (target_t - 0.5f)) {
+            if (id(seconds_remaining) > 0) {
+              id(seconds_remaining)--;
+              if (id(seconds_remaining) % 60 == 0) id(saved_seconds_rem) = id(seconds_remaining);
+            } else {
+              id(saved_seconds_rem) = 0;
+              id(brew_state) = 6;
                 id(status_text) = "STEP " + std::to_string(cs) + " DONE - TAP CONTINUE";
                 lv_label_set_text(id(lbl_modal_title), ("STEP " + std::to_string(cs) + " COMPLETE!").c_str());
                 if (cs < id(active_mash_steps) && cs < 8 && *active_m.at(cs) > 0) {
@@ -549,8 +661,10 @@ interval:
                   id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
                 }
               }
-              id(seconds_remaining)--;
+            id(seconds_remaining)--;
+            if (id(seconds_remaining) % 60 == 0) id(saved_seconds_rem) = id(seconds_remaining);
             } else if (id(seconds_remaining) == 0) {
+              id(saved_seconds_rem) = 0;
               id(hop_alert_sec) = 0;
               id(brew_state) = 4;
               auto call = id(bm_pid).make_call();
@@ -558,14 +672,14 @@ interval:
               call.perform();
               id(status_text) = "BOIL COMPLETE - READY TO CHILL";
             }
-          }
-
-           else if (id(brew_state) == 7) {
+          } else if (id(brew_state) == 7) {
             if (id(delay_start_sec) > 0) {
               id(delay_start_sec)--;
+              if (id(delay_start_sec) % 60 == 0) id(saved_delay_sec) = id(delay_start_sec);
               int rem_m = (id(delay_start_sec) + 59) / 60;
               id(status_text) = "DELAYED START IN " + std::to_string(rem_m) + " MIN";
             } else {
+              id(saved_delay_sec) = 0;
               id(cmd_start_brew).execute();
             }
           } else if (id(brew_state) == 5) {
@@ -763,36 +877,7 @@ interval:
           }
 
           else if (act_scr == id(hardware_page)->obj) {
-            int es = id(editing_mash_step);
-            if (es >= 1 && es <= 8) {
-              set_lbl_diff(id(lbl_edit_step_title), "EDITING STEP " + std::to_string(es));
-              set_lbl_diff(id(lbl_edit_step_temp), std::to_string((int)*active_t.at(es - 1)) + " °C");
-              set_lbl_diff(id(lbl_edit_step_time), std::to_string(*active_m.at(es - 1)) + "m");
-            }
-            int eh = id(editing_hop_idx);
-            if (eh >= 1 && eh <= 8) {
-              set_lbl_diff(id(lbl_edit_hop_title), "HOP " + std::to_string(eh) + " ADDITION TIME");
-              set_lbl_diff(id(lbl_edit_hop_time), std::to_string(*active_h.at(eh - 1)) + "m");
-            }
-            set_lbl_diff(id(lbl_boil_time_val), "Boil: " + std::to_string(id(boil_time_min)) + " min");
-            set_lbl_diff(id(lbl_boil_pwr_val), "Power: " + std::to_string(id(boil_power_pct)) + "%");
-            set_lbl_diff(id(lbl_slot_1), id(slot1_name));
-            set_lbl_diff(id(lbl_slot_2), id(slot2_name));
-            set_lbl_diff(id(lbl_slot_3), id(slot3_name));
-            set_lbl_diff(id(lbl_slot_4), id(slot4_name));
-            set_lbl_diff(id(lbl_slot_selected), "Selected: Slot " + std::to_string(id(selected_slot)));
-            set_bg_diff(id(btn_slot_1), lv_color_hex(id(selected_slot) == 1 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_slot_2), lv_color_hex(id(selected_slot) == 2 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_slot_3), lv_color_hex(id(selected_slot) == 3 ? 0x1D4ED8 : 0x1E293B), 0);
-            set_bg_diff(id(btn_slot_4), lv_color_hex(id(selected_slot) == 4 ? 0x1D4ED8 : 0x1E293B), 0);
-          }
-
-          else if (act_scr == id(hardware_page)->obj) {
             id(update_hardware_highlights).execute();
-
-            char pid_buf[80];
-            snprintf(pid_buf, sizeof(pid_buf), "%s  |  PID: P=%.3f I=%.4f D=%.2f", id(hw_status_text).c_str(), id(bm_pid).get_kp(), id(bm_pid).get_ki(), id(bm_pid).get_kd());
-            set_lbl_diff(id(hw_page_status), std::string(pid_buf));
 
             if (id(brew_state) == 5) {
               int cur_w = std::isnan(id(live_watts).state) ? 0 : (int)id(live_watts).state;

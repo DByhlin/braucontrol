@@ -501,6 +501,13 @@ lvgl:
             radius: 12
             scrollable: false
             pad_all: 0
+            on_click:
+              - lambda: |-
+                  if (id(hop_alert_sec) > 0) {
+                    id(hop_alert_sec) = 0;
+                    id(alarm_buzzer).turn_off();
+                    if (id(brew_state) == 3) id(status_text) = "BOILING (" + std::to_string(id(boil_power_pct)) + "% PWR)";
+                  }
             widgets:
               - label:
                   id: lvgl_status_lbl
@@ -1645,6 +1652,7 @@ lvgl:
                             y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -5.0f, 30.0f, 85.0f);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1656,6 +1664,7 @@ lvgl:
                             y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), -1.0f, 30.0f, 85.0f);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1674,6 +1683,7 @@ lvgl:
                             y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 1.0f, 30.0f, 85.0f);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1685,6 +1695,7 @@ lvgl:
                             y: 66
                             on_click:
                               - lambda: 'auto t = BM_TEMPS; bm_adj_float(t, id(editing_mash_step), 5.0f, 30.0f, 85.0f);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1708,6 +1719,7 @@ lvgl:
                             y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -5, 0, 180);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1719,6 +1731,7 @@ lvgl:
                             y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), -1, 0, 180);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1737,6 +1750,7 @@ lvgl:
                             y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 1, 0, 180);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1748,6 +1762,7 @@ lvgl:
                             y: 186
                             on_click:
                               - lambda: 'auto m = BM_TIMES; bm_adj_int(m, id(editing_mash_step), 5, 0, 180);'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1785,6 +1800,7 @@ lvgl:
                             height: 38
                             on_click:
                               - lambda: 'if (id(boil_time_min) > 15) id(boil_time_min) -= 5;'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1803,6 +1819,7 @@ lvgl:
                             height: 38
                             on_click:
                               - lambda: 'if (id(boil_time_min) < 120) id(boil_time_min) += 5;'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1815,6 +1832,7 @@ lvgl:
                             height: 38
                             on_click:
                               - lambda: 'if (id(boil_power_pct) > 30) id(boil_power_pct) -= 5;'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER
@@ -1833,6 +1851,7 @@ lvgl:
                             height: 38
                             on_click:
                               - lambda: 'if (id(boil_power_pct) < 100) id(boil_power_pct) += 5;'
+                              - script.execute: update_recipe_highlights
                             widgets:
                               - label:
                                   align: CENTER

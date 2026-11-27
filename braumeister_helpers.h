@@ -50,6 +50,7 @@ static const char* BM_UPLOAD_HTML = R"HTML(<!DOCTYPE html>
     <button class="btn btn-red" onclick="sendCmd('stop')">Stop All</button>
     <button class="btn btn-off" onclick="sendCmd('delay_add')">Delay Start +30m</button>
     <button class="btn btn-off" onclick="sendCmd('delay_clr')">Clear Delay</button>
+    <button class="btn btn-amber" style="grid-column:span 2" onclick="sendCmd('ack_hop')">Silence Hop Alarm</button>
   </div></div></div>
   <div class="card"><div class="card-hdr">Manual Pump &amp; Element Override</div><div class="card-body"><div id="io_grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
     <button class="btn btn-off" id="b_h1" onclick="sendCmd('htr1')">HTR 1</button>
