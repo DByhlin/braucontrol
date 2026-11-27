@@ -635,6 +635,9 @@ globals:
   - id: runaway_sec
     type: int
     initial_value: '0'
+  - id: paused_state
+    type: int
+    initial_value: '0'
 
 switch:
   - platform: gpio
@@ -714,6 +717,7 @@ text:
              id(active_hop_count) = hc;
              id(editing_mash_step) = 1;
              id(editing_hop_idx) = 1;
+             id(paused_state) = 0;
              id(status_text) = "LOADED: " + id(recipe_name);
              id(sync_recipe_sliders).execute();
            }

@@ -166,6 +166,7 @@ script:
           id(active_hop_count) = hc;
           id(editing_mash_step) = 1;
           id(editing_hop_idx) = 1;
+          id(paused_state) = 0;
       - script.execute: sync_recipe_sliders
 
   - id: cmd_start_brew
@@ -173,6 +174,28 @@ script:
       - lambda: |-
           id(manual_htr_1) = false;
           id(manual_htr_2) = false;
+          // Resume Boil if paused by safety stop
+          if (id(brew_state) == 0 && id(paused_state) == 3 && id(seconds_remaining) > 0) {
+            id(paused_state) = 0;
+            id(brew_state) = 3;
+            id(pump_1).turn_off();
+            id(pump_2).turn_off();
+            auto call = id(bm_pid).make_call();
+            call.set_target_temperature(100.0f);
+            call.set_mode("HEAT");
+            call.perform();
+            id(status_text) = "RESUMED BOIL PHASE";
+            return;
+          }
+          // Resume Mash Step if paused by safety stop
+          if (id(brew_state) == 0 && id(paused_state) == 1 && id(seconds_remaining) > 0) {
+            id(paused_state) = 0;
+            id(brew_state) = 1;
+            id(pump_cycle_sec) = 0;
+            id(status_text) = "RESUMED MASH STEP " + std::to_string(id(current_step));
+            return;
+          }
+          id(paused_state) = 0;
           if (id(brew_state) == 0 && id(delay_start_min) > 0) {
             id(delay_start_sec) = id(delay_start_min) * 60;
             id(saved_delay_sec) = id(delay_start_sec);
@@ -229,9 +252,12 @@ script:
           id(manual_htr_1) = false;
           id(manual_htr_2) = false;
           id(hop_alert_sec) = 0;
+          if (!(id(brew_state) == 0 && id(paused_state) == 3 && id(seconds_remaining) > 0)) {
+            id(seconds_remaining) = id(boil_time_min) * 60;
+            id(saved_seconds_rem) = id(seconds_remaining);
+          }
+          id(paused_state) = 0;
           id(brew_state) = 3;
-          id(seconds_remaining) = id(boil_time_min) * 60;
-          id(saved_seconds_rem) = id(seconds_remaining);
           id(pump_1).turn_off();
           id(pump_2).turn_off();
           auto call = id(bm_pid).make_call();
@@ -240,10 +266,37 @@ script:
           call.perform();
           id(status_text) = "HEATING TO BOIL (100 C)";
 
+  - id: cmd_safety_pause
+    then:
+      - lambda: |-
+          if (id(brew_state) == 1 || id(brew_state) == 3) {
+            id(paused_state) = id(brew_state);
+            id(saved_seconds_rem) = id(seconds_remaining);
+          } else {
+            id(paused_state) = 0;
+          }
+          id(brew_state) = 0;
+          id(autotune_elapsed_sec) = 0;
+          id(hop_alert_sec) = 0;
+          id(manual_htr_1) = false;
+          id(manual_htr_2) = false;
+          id(current_heat_level) = 0.0f;
+          id(heater_1_pwm).set_level(0.0f);
+          id(heater_2_pwm).set_level(0.0f);
+          id(pump_1).turn_off();
+          id(pump_2).turn_off();
+          auto call = id(bm_pid).make_call();
+          call.set_mode("OFF");
+          call.perform();
+          id(active_h1_pct) = 0;
+          id(active_h2_pct) = 0;
+          id(runaway_sec) = 0;
+
   - id: cmd_stop_all
     then:
       - lambda: |-
           id(brew_state) = 0;
+          id(paused_state) = 0;
           id(delay_start_min) = 0;
           id(delay_start_sec) = 0;
           id(saved_delay_sec) = 0;
@@ -530,13 +583,13 @@ interval:
 
           if (id(brew_state) == 1 || id(brew_state) == 3 || id(brew_state) == 5 || id(brew_state) == 6) {
             if (std::isnan(id(kettle_temp).state)) {
-              id(cmd_stop_all).execute();
-              id(status_text) = "SAFETY STOP: KETTLE PROBE LOST!";
+              id(cmd_safety_pause).execute();
+              id(status_text) = "SAFETY PAUSE: PROBE LOST (TAP START)";
               return;
             }
             if (id(kettle_temp).state > 105.0f) {
-              id(cmd_stop_all).execute();
-              id(status_text) = "EMERGENCY STOP: OVER-TEMP (>105C)!";
+              id(cmd_safety_pause).execute();
+              id(status_text) = "SAFETY PAUSE: OVER-TEMP >105C!";
               return;
             }
           }
@@ -557,8 +610,8 @@ interval:
             // 1. Dry-Fire Check: > 3.5C spike within 10 seconds
             if (id(runaway_sec) <= 10) {
               if ((id(kettle_temp).state - id(runaway_ref_temp)) > 3.5f) {
-                id(cmd_stop_all).execute();
-                id(status_text) = "SAFETY STOP: DRY-FIRE / RAPID SPIKE!";
+                id(cmd_safety_pause).execute();
+                id(status_text) = "SAFETY PAUSE: DRY-FIRE SPIKE!";
                 return;
               }
             }
@@ -566,11 +619,10 @@ interval:
             // 2. Detached Probe Check: < 0.5C rise after 180s (3 min) of high power (below 96C)
             if (id(runaway_sec) >= 180) {
               if (id(kettle_temp).state < 96.0f && (id(kettle_temp).state - id(runaway_ref_temp)) < 0.5f) {
-                id(cmd_stop_all).execute();
-                id(status_text) = "SAFETY STOP: NO TEMP RISE (CHECK PROBE)!";
+                id(cmd_safety_pause).execute();
+                id(status_text) = "SAFETY PAUSE: NO TEMP RISE!";
                 return;
               }
-              // Reset 3-minute sliding window
               id(runaway_sec) = 0;
             }
           } else {
@@ -837,6 +889,8 @@ interval:
             else if (id(brew_state) == 6) set_lbl_diff(id(lbl_step_badge), "Done: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps)));
             else if (id(brew_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Boil @ " + std::to_string(id(boil_power_pct)) + "% Power"); }
             else if (id(brew_state) == 5) { display_target = 65.0f; set_lbl_diff(id(lbl_step_badge), "PID Auto-Tune"); }
+            else if (id(paused_state) == 1) { set_lbl_diff(id(lbl_step_badge), "Paused: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps))); }
+            else if (id(paused_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Paused: Boil Phase"); }
             else { display_target = id(mash_temp_1); set_lbl_diff(id(lbl_step_badge), "Ready: Step 1 of " + std::to_string(id(active_mash_steps))); }
 
             int tgt10 = (int)(display_target * 10.0f);
