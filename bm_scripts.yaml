@@ -570,6 +570,7 @@ interval:
               }
             }
           }
+
           // =========================================================
           // SECTION 2: SAFETY INTERLOCKS, BUZZER & BREW STATE MACHINE
           // =========================================================
@@ -733,6 +734,43 @@ interval:
               call.set_mode("OFF");
               call.perform();
               id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+            }
+          } else if (id(brew_state) == 0 && id(paused_state) == 3 && id(seconds_remaining) > 0) {
+            // Keep boil timer running during Safe-Pause if hops were added & wort >= 80C (isomerization active)
+            if (!std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 80.0f) {
+              int mins_left = (id(seconds_remaining) + 59) / 60;
+              bool hops_added = false;
+              for (int i = 0; i < id(active_hop_count) && i < 8; i++) {
+                if (*active_h.at(i) > 0 && *active_h.at(i) >= mins_left) {
+                  hops_added = true;
+                  break;
+                }
+              }
+              if (hops_added) {
+                if (id(seconds_remaining) % 60 == 0) {
+                  int exact_mins = id(seconds_remaining) / 60;
+                  std::string hop_msg = "";
+                  for (int i = 0; i < id(active_hop_count) && i < 8; i++) {
+                    if (*active_h.at(i) > 0 && *active_h.at(i) == exact_mins) {
+                      if (!hop_msg.empty()) hop_msg += " & ";
+                      hop_msg += "#" + std::to_string(i + 1);
+                    }
+                  }
+                  if (!hop_msg.empty()) {
+                    id(hop_alert_sec) = 20;
+                    id(status_text) = "ADD HOP " + hop_msg + " NOW! (PAUSED >80C)";
+                  }
+                }
+                id(seconds_remaining)--;
+                if (id(seconds_remaining) % 60 == 0) id(saved_seconds_rem) = id(seconds_remaining);
+                if (id(seconds_remaining) == 0) {
+                  id(saved_seconds_rem) = 0;
+                  id(paused_state) = 0;
+                  id(hop_alert_sec) = 0;
+                  id(brew_state) = 4;
+                  id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+                }
+              }
             }
           } else if (id(brew_state) == 7) {
             if (id(delay_start_sec) > 0) {
@@ -906,7 +944,11 @@ interval:
             else if (id(brew_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Boil @ " + std::to_string(id(boil_power_pct)) + "% Power"); }
             else if (id(brew_state) == 5) { display_target = 65.0f; set_lbl_diff(id(lbl_step_badge), "PID Auto-Tune"); }
             else if (id(paused_state) == 1) { set_lbl_diff(id(lbl_step_badge), "Paused: Step " + std::to_string(cs_disp) + " of " + std::to_string(id(active_mash_steps))); }
-            else if (id(paused_state) == 3) { display_target = 100.0f; set_lbl_diff(id(lbl_step_badge), "Paused: Boil Phase"); }
+            else if (id(paused_state) == 3) {
+              display_target = 100.0f;
+              bool iso_active = !std::isnan(id(kettle_temp).state) && id(kettle_temp).state >= 80.0f;
+              set_lbl_diff(id(lbl_step_badge), iso_active ? "Paused: Boil (>80C Timer)" : "Paused: Boil Phase");
+            }
             else { display_target = id(mash_temp_1); set_lbl_diff(id(lbl_step_badge), "Ready: Step 1 of " + std::to_string(id(active_mash_steps))); }
 
             int tgt10 = (int)(display_target * 10.0f);
