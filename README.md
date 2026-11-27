@@ -7,7 +7,7 @@
 ## Features
 
 * **7" Touchscreen UI (LVGL):**
-  * **Brew Session Dashboard:** Live radial kettle temperature gauge, target temperature, countdown/delay timer, auxiliary probe readout, manual element/pump overrides, and step confirmation modals.
+  * **Brew Session Dashboard:** Live radial kettle temperature gauge, target temperature, countdown/delay timer, auxiliary probe readout, manual element/pump overrides, tap-to-silence hop banner, and step confirmation modals.
   * **Recipe Builder:** Up to **8 mash steps** (`30–85°C`), configurable boil duration and boil power (`30–100%`), up to **8 hop addition timers**, and **8 persistent NVS flash recipe slots**.
   * **Hardware & PID Setup:** One-tap presets for **BM10 (1.2kW)**, **BM20 (2.0kW)**, and **BM50 (3.3kW)**, custom pump run/rest cycling, probe swapping, and built-in **PID auto-tuning**.
   * **On-Screen Wi-Fi Manager:** Scan 2.4 GHz networks and enter credentials directly on the touchscreen, with automatic fallback AP (`BM-BrewController`).
@@ -45,14 +45,14 @@
 
 ---
 
-## Built-In Safety Interlocks
+## Built-In Safety Interlocks & Safe-Pause Recovery
 
-BrauControl runs a 1-second hardware watchdog loop with multiple independent safety cutoffs:
+BrauControl runs a 1-second hardware watchdog loop with multiple independent safety protections. When any of the first four fault conditions triggers, BrauControl executes a **Safe-Pause**: it immediately cuts power to all heaters and pumps, sounds the alarm buzzer, and **holds your active mash step or boil timer** so you can resolve the physical issue and tap **START** (or **BOIL**) to resume right where you left off—or tap **STOP** to fully abort.
 
-1. **Over-Temperature Emergency Cutoff:** Immediately shuts down all heaters and pumps if `kettle_temp > 105.0°C`.
-2. **Lost Sensor Protection:** Halts heating immediately if the primary kettle probe disconnects or returns `NaN` during active heating.
-3. **Dry-Fire / Rapid Spike Detection:** Triggers an emergency stop if kettle temperature spikes by **more than `3.5°C` within 10 seconds** while heaters are active.
-4. **Detached Probe Detection:** Triggers an emergency stop if heaters run at high power (`>= 80%`) below `96°C` for **3 minutes** with less than `0.5°C` temperature rise.
+1. **Over-Temperature Safe-Pause:** Cuts power and pauses the session if `kettle_temp > 105.0°C`.
+2. **Lost Sensor Safe-Pause:** Cuts power and pauses the session if the primary kettle probe disconnects or returns `NaN` during active heating.
+3. **Dry-Fire / Rapid Spike Safe-Pause:** Cuts power and pauses the session if kettle temperature spikes by **more than `3.5°C` within 10 seconds** while heaters are active.
+4. **Detached Probe Safe-Pause:** Cuts power and pauses the session if heaters run at high power (`>= 80%`) below `96°C` for **3 minutes** with less than `0.5°C` temperature rise.
 5. **Pump Thermal Lockout:** Automatically turns off and locks out circulation pumps whenever wort temperature reaches **`>= 88.0°C`** to prevent pump cavitation and impeller damage.
 6. **Smart Mash Hold:** On dual-element systems (BM50), mash temperature maintenance uses only the smaller 1300W element to prevent scorching and overshoot.
 
@@ -62,16 +62,16 @@ BrauControl runs a 1-second hardware watchdog loop with multiple independent saf
 
 * `braumeister-googleai.yaml` — Main ESPHome configuration, hardware pins, sensors, PID climate controller, and persistent globals.
 * `bm_ui.yaml` — LVGL 800×480 touchscreen interface (Home, Brew Session, Recipe Builder, Hardware Setup, Wi-Fi Settings).
-* `bm_scripts.yaml` — Brew state machine, safety interlocks, PID auto-tune handler, power-loss recovery, and `/brewcontrol` web API.
+* `bm_scripts.yaml` — Brew state machine, safety interlocks, Safe-Pause recovery, PID auto-tune handler, power-loss recovery, and `/brewcontrol` web API.
 * `braumeister_helpers.h` — Embedded HTML/JS web dashboard, BeerXML parser, and C++ recipe/list helper functions.
-* `secrets.yaml` — Wi-Fi credentials template (optional; Wi-Fi can also be configured directly via the touchscreen).
+* `secrets.yaml` — Wi-Fi credentials template (Wi-Fi can also be configured directly via the touchscreen).
 
 ---
 
 ## Installation & Flashing
 
 1. Install **ESPHome `2026.1.0`** or newer.
-2. Place all five files in your ESPHome configuration directory.
+2. Place all five source files in your ESPHome configuration directory.
 3. Compile and flash via USB-C for the initial install:
    ```bash
    esphome run braumeister-googleai.yaml
