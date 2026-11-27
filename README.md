@@ -83,3 +83,17 @@ BrauControl runs a 1-second hardware watchdog loop across both **automated brewi
    esphome run braumeister-googleai.yaml
    ```
 4. Once booted, tap **WIFI SETTINGS** on the touchscreen to connect to your 2.4 GHz network, then open `http://<CONTROLLER-IP>/brewcontrol` in any browser to upload BeerXML recipes or monitor your brew remotely.
+
+---
+
+## Disclaimer & AI Development Notice
+
+### AI-Assisted Development
+Large portions of the firmware, web dashboard, and user interface code in this repository were generated and refined using Artificial Intelligence (AI) coding tools. While the software includes built-in safety interlocks and has been structured for brewing automation, AI-generated code may contain unexpected edge cases, logic flaws, or hardware-specific bugs.
+
+### Limitation of Liability & Hardware Safety
+**USE AT YOUR OWN RISK.** Brewing automation involves high-voltage electricity, high-wattage heating elements, and boiling liquids, all of which carry inherent risks of fire, electrical shock, scalding, and property damage. 
+
+* **No Warranty:** In accordance with the GNU General Public License v3.0 (GPL-3.0), this software is provided *"AS IS"*, without warranty of any kind, express or implied. 
+* **No Liability:** Under no circumstances shall the project author, contributors, or copyright holders be held liable for any direct, indirect, incidental, or consequential damages, personal injury, or equipment failure resulting from the use, misuse, or inability to use this software or its associated hardware schematics.
+* **User Responsibility:** By flashing or running this firmware, you assume full responsibility for verifying the code, ensuring proper electrical isolation and grounding, installing independent physical safety devices (such as thermal fuses, GFCI/RCD breakers, and mechanical high-limit cutoffs), and never leaving active heating elements unattended.
