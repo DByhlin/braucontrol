@@ -163,6 +163,9 @@ script:
           lv_obj_set_hidden(id(step_confirm_modal), true);
           id(status_text) = "ALL STOPPED";
           id(alarm_buzzer).turn_off();
+          id(current_heat_level) = 0.0f;
+          id(active_h1_pct) = 0;
+          id(active_h2_pct) = 0;
 
   - id: register_beerxml_uploader
     mode: single
@@ -191,8 +194,8 @@ script:
                 if (request->hasParam("cmd")) {
                   std::string cmd = request->getParam("cmd")->value().c_str();
                   if (cmd == "state") {
-                    int h1 = (id(brew_state) == 0) ? (id(manual_htr_1) ? 1 : 0) : (id(current_heat_level) > 0.01f ? 1 : 0);
-                    int h2 = (id(num_elements) == 2) ? ((id(brew_state) == 0) ? (id(manual_htr_2) ? 1 : 0) : (id(current_heat_level) > 0.01f ? 1 : 0)) : -1;
+                    int h1 = (id(brew_state) == 0) ? (id(manual_htr_1) ? 1 : 0) : (id(active_h1_pct) > 0 ? 1 : 0);
+                    int h2 = (id(num_elements) == 2) ? ((id(brew_state) == 0) ? (id(manual_htr_2) ? 1 : 0) : (id(active_h2_pct) > 0 ? 1 : 0)) : -1;
                     int p1 = id(pump_1).state ? 1 : 0;
                     int p2 = (id(num_pumps) == 2) ? (id(pump_2).state ? 1 : 0) : -1;
 
@@ -543,8 +546,8 @@ interval:
             set_lbl_diff(id(lbl_brew_recipe), "Recipe: " + id(recipe_name));
 
             int heat_pct = (int)(id(current_heat_level) * 100.0f);
-            bool h1_on = (id(brew_state) == 0) ? id(manual_htr_1) : (heat_pct > 0);
-            bool h2_on = (id(num_elements) == 2) && ((id(brew_state) == 0) ? id(manual_htr_2) : (heat_pct > 0));
+            bool h1_on = (id(brew_state) == 0) ? id(manual_htr_1) : (id(active_h1_pct) > 0);
+            bool h2_on = (id(num_elements) == 2) && ((id(brew_state) == 0) ? id(manual_htr_2) : (id(active_h2_pct) > 0));
 
             int visible_cnt = 2 + (id(num_elements) == 2 ? 1 : 0) + (id(num_pumps) == 2 ? 1 : 0);
             int gap = 14;
@@ -555,7 +558,7 @@ interval:
             lv_obj_set_width(id(pill_htr1), btn_w);
             cur_x += btn_w + gap;
             set_bg_diff(id(pill_htr1), lv_color_hex(h1_on ? 0xDC2626 : 0x1E293B), 0);
-            set_lbl_diff(id(lbl_pill_htr1), h1_on ? ((id(brew_state) == 0) ? "HTR 1: MAN ON" : ("HTR 1: " + std::to_string(heat_pct) + "%")) : "HTR 1: OFF");
+            set_lbl_diff(id(lbl_pill_htr1), h1_on ? ((id(brew_state) == 0) ? "HTR 1: MAN ON" : ("HTR 1: " + std::to_string(id(active_h1_pct)) + "%")) : "HTR 1: OFF");
 
             if (id(num_elements) == 1) {
               set_hid_diff(id(pill_htr2), true);
@@ -565,7 +568,7 @@ interval:
               lv_obj_set_width(id(pill_htr2), btn_w);
               cur_x += btn_w + gap;
               set_bg_diff(id(pill_htr2), lv_color_hex(h2_on ? 0xDC2626 : 0x1E293B), 0);
-              set_lbl_diff(id(lbl_pill_htr2), h2_on ? ((id(brew_state) == 0) ? "HTR 2: MAN ON" : ("HTR 2: " + std::to_string(heat_pct) + "%")) : "HTR 2: OFF");
+            set_lbl_diff(id(lbl_pill_htr2), h2_on ? ((id(brew_state) == 0) ? "HTR 2: MAN ON" : ("HTR 2: " + std::to_string(id(active_h2_pct)) + "%")) : "HTR 2: OFF");
             }
 
             lv_obj_set_pos(id(pill_pump1), cur_x, 274);

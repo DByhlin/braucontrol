@@ -120,7 +120,7 @@ lvgl:
                   x: 18
                   y: 40
                   text_color: 0x94A3B8
-                  text: "3200W | 2 EL | 2 PMP | 16A"
+                  text: "3300W | 2 EL | 2 PMP | 16A"
               - label:
                   id: home_status_badge
                   align: TOP_MID
@@ -945,7 +945,7 @@ lvgl:
             x: 140
             y: 36
             text_color: 0x38BDF8
-            text: "BM50 | 3200W | 2 EL | 2 PMP | 16A"
+            text: "BM50 | 3300W | 2 EL | 2 PMP | 16A"
 
         # Card 1: Kettle Model, Elements, Pumps & 230V Fuse Limit (Amber Accent)
         - obj:
@@ -982,7 +982,13 @@ lvgl:
                   width: 180
                   height: 44
                   on_click:
-                    - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200; id(pump_2).turn_off();'
+                    - lambda: |-
+                        id(num_elements) = 1;
+                        id(num_pumps) = 1;
+                        id(element_watts) = 1200;
+                        id(manual_htr_2) = false;
+                        id(heater_2_pwm).set_level(0.0f);
+                        id(pump_2).turn_off();
                   widgets:
                     - label:
                         align: CENTER
@@ -994,7 +1000,13 @@ lvgl:
                   width: 180
                   height: 44
                   on_click:
-                    - lambda: 'id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000; id(pump_2).turn_off();'
+                    - lambda: |-
+                        id(num_elements) = 1;
+                        id(num_pumps) = 1;
+                        id(element_watts) = 2000;
+                        id(manual_htr_2) = false;
+                        id(heater_2_pwm).set_level(0.0f);
+                        id(pump_2).turn_off();
                   widgets:
                     - label:
                         align: CENTER
@@ -1006,11 +1018,11 @@ lvgl:
                   width: 180
                   height: 44
                   on_click:
-                    - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3200;'
+                    - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3300;'
                   widgets:
                     - label:
                         align: CENTER
-                        text: "BM50 (3.2kW)"
+                        text: "BM50 (3.3kW)"
               # Row 2: Heating Elements & Circulation Pumps
               - label:
                   x: 22
@@ -1024,7 +1036,11 @@ lvgl:
                   width: 105
                   height: 44
                   on_click:
-                    - lambda: 'id(num_elements) = 1; if (id(element_watts) > 2000) id(element_watts) = 2000;'
+                    - lambda: |-
+                        id(num_elements) = 1;
+                        if (id(element_watts) > 2000) id(element_watts) = 2000;
+                        id(manual_htr_2) = false;
+                        id(heater_2_pwm).set_level(0.0f);
                   widgets:
                     - label:
                         align: CENTER
@@ -1036,7 +1052,7 @@ lvgl:
                   width: 105
                   height: 44
                   on_click:
-                    - lambda: 'id(num_elements) = 2; id(element_watts) = 3200;'
+                    - lambda: 'id(num_elements) = 2; id(element_watts) = 3300;'
                   widgets:
                     - label:
                         align: CENTER

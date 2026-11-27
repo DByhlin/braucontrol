@@ -147,8 +147,11 @@ output:
               req_lvl = (float)id(boil_power_pct) / 100.0f;
             }
 
-            // Calculate max allowed duty cycle based on 230V breaker rating & model wattage
-            float total_watts = (float)id(element_watts);
+            float h1_w = (id(num_elements) == 2) ? 2000.0f : (float)id(element_watts);
+            float h2_w = (id(num_elements) == 2) ? 1300.0f : 0.0f;
+            float total_watts = h1_w + h2_w;
+
+            // Leave ~5% headroom for pumps on 230V breaker
             float max_watts = (id(max_amps) > 0) ? (id(max_amps) * 230.0f * 0.95f) : 9999.0f;
             float max_cap = (max_watts < total_watts) ? (max_watts / total_watts) : 1.0f;
 
@@ -158,16 +161,36 @@ output:
             if (id(num_elements) == 1) {
               id(heater_1_pwm).set_level(final_lvl);
               id(heater_2_pwm).set_level(0.0f);
+              id(active_h1_pct) = (int)(final_lvl * 100.0f);
+              id(active_h2_pct) = 0;
             } else {
-              // If breaker <= 13A on a 2-element BM50, alternate elements every 10s
-              if (id(max_amps) > 0 && id(max_amps) <= 13) {
+              float target_w = final_lvl * total_watts;
+              bool is_holding = (id(brew_state) != 3) &&
+                                !std::isnan(id(kettle_temp).state) &&
+                                (id(kettle_temp).state >= (id(bm_pid).target_temperature - 1.0f));
+
+              if (is_holding) {
+                // Hold mash temperature using ONLY Heater 2 (1300W)
+                float h2_lvl = std::min(1.0f, target_w / h2_w);
+                id(heater_1_pwm).set_level(0.0f);
+                id(heater_2_pwm).set_level(h2_lvl);
+                id(active_h1_pct) = 0;
+                id(active_h2_pct) = (int)(h2_lvl * 100.0f);
+              } else if (id(max_amps) > 0 && id(max_amps) <= 13) {
+                // On 10A/13A breaker during ramp/boil: alternate single element every 10s
                 bool use_h1 = ((millis() / 10000) % 2 == 0);
-                float single_lvl = (final_lvl * 2.0f > 1.0f) ? 1.0f : (final_lvl * 2.0f);
-                id(heater_1_pwm).set_level(use_h1 ? single_lvl : 0.0f);
-                id(heater_2_pwm).set_level(use_h1 ? 0.0f : single_lvl);
+                float h1_lvl = use_h1 ? std::min(1.0f, target_w / h1_w) : 0.0f;
+                float h2_lvl = use_h1 ? 0.0f : std::min(1.0f, target_w / h2_w);
+                id(heater_1_pwm).set_level(h1_lvl);
+                id(heater_2_pwm).set_level(h2_lvl);
+                id(active_h1_pct) = (int)(h1_lvl * 100.0f);
+                id(active_h2_pct) = (int)(h2_lvl * 100.0f);
               } else {
+                // Full dual-element ramp or boil
                 id(heater_1_pwm).set_level(final_lvl);
                 id(heater_2_pwm).set_level(final_lvl);
+                id(active_h1_pct) = (int)(final_lvl * 100.0f);
+                id(active_h2_pct) = (int)(final_lvl * 100.0f);
               }
             }
           }
@@ -257,17 +280,21 @@ sensor:
       sorting_weight: 3
     lambda: |-
       float w = 0.0f;
-      float total_el_w = (float)id(element_watts);
-      if (id(brew_state) == 0) {
-        if (id(num_elements) == 1) {
-          if (id(manual_htr_1)) w += total_el_w;
+      if (id(num_elements) == 1) {
+        float el_w = (float)id(element_watts);
+        if (id(brew_state) == 0) {
+          if (id(manual_htr_1)) w += el_w;
         } else {
-          float per_el = total_el_w / 2.0f;
-          if (id(manual_htr_1)) w += per_el;
-          if (id(manual_htr_2)) w += per_el;
+          w += el_w * (id(active_h1_pct) / 100.0f);
         }
       } else {
-        w += total_el_w * id(current_heat_level);
+        if (id(brew_state) == 0) {
+          if (id(manual_htr_1)) w += 2000.0f;
+          if (id(manual_htr_2)) w += 1300.0f;
+        } else {
+          w += 2000.0f * (id(active_h1_pct) / 100.0f);
+          w += 1300.0f * (id(active_h2_pct) / 100.0f);
+        }
       }
       if (id(pump_1).state) w += 25.0f;
       if (id(num_pumps) == 2 && id(pump_2).state) w += 25.0f;
@@ -508,7 +535,7 @@ globals:
   - id: element_watts
     type: int
     restore_value: yes
-    initial_value: '3200'
+    initial_value: '3300'
   - id: delay_start_min
     type: int
     initial_value: '0'
@@ -527,6 +554,12 @@ globals:
     type: bool
     restore_value: yes
     initial_value: 'false'
+  - id: active_h1_pct
+    type: int
+    initial_value: '0'
+  - id: active_h2_pct
+    type: int
+    initial_value: '0'
 
 switch:
   - platform: gpio
@@ -798,19 +831,22 @@ select:
     options:
       - "BM10 (1200W)"
       - "BM20 (2000W)"
-      - "BM50 2-Pump (3200W)"
-      - "BM50 1-Pump (3200W)"
-    initial_option: "BM50 2-Pump (3200W)"
+      - "BM50 2-Pump (3300W)"
+      - "BM50 1-Pump (3300W)"
+    initial_option: "BM50 2-Pump (3300W)"
     on_value:
       - lambda: |-
           if (x == "BM10 (1200W)") {
-            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200; id(pump_2).turn_off();
+            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200;
+            id(manual_htr_2) = false; id(heater_2_pwm).set_level(0.0f); id(pump_2).turn_off();
           } else if (x == "BM20 (2000W)") {
-            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000; id(pump_2).turn_off();
-          } else if (x == "BM50 1-Pump (3200W)") {
-            id(num_elements) = 2; id(num_pumps) = 1; id(element_watts) = 3200; id(pump_2).turn_off();
+            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000;
+            id(manual_htr_2) = false; id(heater_2_pwm).set_level(0.0f); id(pump_2).turn_off();
+          } else if (x == "BM50 1-Pump (3300W)") {
+            id(num_elements) = 2; id(num_pumps) = 1; id(element_watts) = 3300;
+            id(pump_2).turn_off();
           } else {
-            id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3200;
+            id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3300;
           }
   
   - platform: template
