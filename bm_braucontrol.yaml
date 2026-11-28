@@ -4,7 +4,7 @@ packages:
 
 esphome:
   name: braumeister-controller
-  friendly_name: Braumeister Universal Controller
+  friendly_name: BrauControl
   includes:
     - <esp_wifi.h>
     - <vector>
