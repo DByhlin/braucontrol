@@ -1961,6 +1961,15 @@ lvgl:
                   height: 46
                   options:
                     - "Tap SCAN LAN to search..."
+                  on_value:
+                    - lambda: |-
+                        std::vector<char> sel_buf(96, 0);
+                        lv_dropdown_get_selected_str(id(ferm_discovered_dd)->obj, sel_buf.data(), sel_buf.size());
+                        std::string sel(sel_buf.data());
+                        size_t lp = sel.find(" (");
+                        if (lp != std::string::npos && lp > 0) {
+                          lv_textarea_set_text(id(ferm_name_ta), sel.substr(0, lp).c_str());
+                        }
               - textarea:
                   id: ferm_name_ta
                   x: 20

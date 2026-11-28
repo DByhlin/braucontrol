@@ -207,9 +207,17 @@ script:
               if (r->addr != nullptr && r->addr->addr.type == ESP_IPADDR_TYPE_V4) {
                 char ip_str[16];
                 esp_ip4addr_ntoa(&r->addr->addr.u_addr.ip4, ip_str, sizeof(ip_str));
-                std::string host = r->hostname ? std::string(r->hostname) : "brauferm";
+                std::string disp_name = r->hostname ? std::string(r->hostname) : "brauferm";
+                if (r->txt != nullptr) {
+                  for (size_t t = 0; t < r->txt_count; t++) {
+                    if (r->txt[t].key != nullptr && strcmp(r->txt[t].key, "name") == 0 && r->txt[t].value != nullptr) {
+                      disp_name = std::string(r->txt[t].value);
+                      break;
+                    }
+                  }
+                }
                 if (!opts.empty()) opts += "\n";
-                opts += host + " (" + std::string(ip_str) + ")";
+                opts += disp_name + " (" + std::string(ip_str) + ")";
                 found++;
               }
               r = r->next;
