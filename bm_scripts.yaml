@@ -117,12 +117,190 @@ script:
           if (strcmp(lv_label_get_text(id(hw_page_status)), pid_buf) != 0) {
             lv_label_set_text(id(hw_page_status), pid_buf);
           }
+          id(update_fermentation_ui).execute();
+
+  - id: update_fermentation_ui
+    then:
+      - lambda: |-
+          bool en = id(ferm_ctrl_enabled);
+          if (en) lv_obj_add_state(id(chk_ferm_enable), LV_STATE_CHECKED);
+          else lv_obj_clear_state(id(chk_ferm_enable), LV_STATE_CHECKED);
+
+          if (!en || id(ferm_count) >= 6) {
+            lv_obj_add_state(id(btn_add_fermenter), LV_STATE_DISABLED);
+            lv_obj_set_style_bg_color(id(btn_add_fermenter), lv_color_hex(0x1E293B), (int)LV_PART_MAIN | (int)LV_STATE_DISABLED);
+            lv_obj_set_style_border_color(id(btn_add_fermenter), lv_color_hex(0x334155), (int)LV_PART_MAIN | (int)LV_STATE_DISABLED);
+          } else {
+            lv_obj_clear_state(id(btn_add_fermenter), LV_STATE_DISABLED);
+            lv_obj_set_style_bg_color(id(btn_add_fermenter), lv_color_hex(0x059669), 0);
+            lv_obj_set_style_border_color(id(btn_add_fermenter), lv_color_hex(0x34D399), 0);
+          }
+
+          std::vector<lv_obj_t*> cards = {id(card_ferm_1), id(card_ferm_2), id(card_ferm_3), id(card_ferm_4), id(card_ferm_5), id(card_ferm_6)};
+          std::vector<lv_obj_t*> n_lbls = {id(lbl_ferm_name_1), id(lbl_ferm_name_2), id(lbl_ferm_name_3), id(lbl_ferm_name_4), id(lbl_ferm_name_5), id(lbl_ferm_name_6)};
+          std::vector<lv_obj_t*> i_lbls = {id(lbl_ferm_ip_1), id(lbl_ferm_ip_2), id(lbl_ferm_ip_3), id(lbl_ferm_ip_4), id(lbl_ferm_ip_5), id(lbl_ferm_ip_6)};
+          auto names = BM_FERM_NAMES;
+          auto ips = BM_FERM_IPS;
+
+          for (int i = 0; i < 6; i++) {
+            bool show = en && (i < id(ferm_count));
+            if (lv_obj_is_hidden(cards.at(i)) != !show) lv_obj_set_hidden(cards.at(i), !show);
+            if (show) {
+              lv_label_set_text(n_lbls.at(i), names.at(i)->c_str());
+              lv_label_set_text(i_lbls.at(i), ips.at(i)->c_str());
+            }
+          }
+
+          if (!en) {
+            lv_obj_set_hidden(id(lbl_ferm_placeholder), false);
+            lv_label_set_text(id(lbl_ferm_placeholder), "Enable Fermentation Control above to pair controllers.");
+          } else if (id(ferm_count) == 0) {
+            lv_obj_set_hidden(id(lbl_ferm_placeholder), false);
+            lv_label_set_text(id(lbl_ferm_placeholder), "No fermenters paired. Tap '+ ADD FERMENTER' to scan LAN.");
+          } else {
+            lv_obj_set_hidden(id(lbl_ferm_placeholder), true);
+          }
+
+  - id: save_discovered_fermenter
+    then:
+      - lambda: |-
+          if (id(ferm_count) >= 6) return;
+          std::vector<char> sel_buf(96, 0);
+          lv_dropdown_get_selected_str(id(ferm_discovered_dd)->obj, sel_buf.data(), sel_buf.size());
+          std::string sel(sel_buf.data());
+          size_t lp = sel.find('(');
+          size_t rp = sel.find(')');
+          if (lp == std::string::npos || rp == std::string::npos || rp <= lp + 1) return;
+
+          std::string ip = sel.substr(lp + 1, rp - lp - 1);
+          auto names = BM_FERM_NAMES;
+          auto ips = BM_FERM_IPS;
+
+          for (int i = 0; i < id(ferm_count); i++) {
+            if (*ips.at(i) == ip) {
+              lv_label_set_text(id(lbl_ferm_scan_status), "Controller already paired!");
+              return;
+            }
+          }
+
+          std::string fname = lv_textarea_get_text(id(ferm_name_ta));
+          if (fname.empty()) fname = "Fermenter " + std::to_string(id(ferm_count) + 1);
+
+          *names.at(id(ferm_count)) = fname;
+          *ips.at(id(ferm_count)) = ip;
+          id(ferm_count)++;
+          lv_obj_set_hidden(id(hw_ferm_kb)->obj, true);
+          lv_obj_set_hidden(id(add_ferm_modal), true);
+      - script.execute: update_fermentation_ui
+
+  - id: scan_fermenter_controllers
+    then:
+      - lambda: |-
+          lv_label_set_text(id(lbl_ferm_scan_status), "Querying LAN via mDNS (_brauferm._tcp)...");
+          mdns_result_t *results = nullptr;
+          esp_err_t err = mdns_query_ptr("_brauferm", "_tcp", 1500, 10, &results);
+          if (err == ESP_OK && results != nullptr) {
+            std::string opts = "";
+            int found = 0;
+            mdns_result_t *r = results;
+            while (r != nullptr) {
+              if (r->addr != nullptr && r->addr->addr.type == ESP_IPADDR_TYPE_V4) {
+                char ip_str[16];
+                esp_ip4addr_ntoa(&r->addr->addr.u_addr.ip4, ip_str, sizeof(ip_str));
+                std::string host = r->hostname ? std::string(r->hostname) : "brauferm";
+                if (!opts.empty()) opts += "\n";
+                opts += host + " (" + std::string(ip_str) + ")";
+                found++;
+              }
+              r = r->next;
+            }
+            mdns_query_results_free(results);
+            if (found > 0) {
+              lv_dropdown_set_options(id(ferm_discovered_dd)->obj, opts.c_str());
+              lv_label_set_text(id(lbl_ferm_scan_status), ("Found " + std::to_string(found) + " fermentation controller(s)").c_str());
+              return;
+            }
+          }
+          lv_dropdown_set_options(id(ferm_discovered_dd)->obj, "No controllers found");
+          lv_label_set_text(id(lbl_ferm_scan_status), "None found — ensure fermenter is powered & on Wi-Fi");
+
+  - id: update_handoff_modal
+    then:
+      - lambda: |-
+          lv_label_set_text(id(lbl_handoff_recipe), ("Recipe: " + id(recipe_name)).c_str());
+
+          char og_buf[16];
+          snprintf(og_buf, sizeof(og_buf), "1.%03d", id(measured_og_pts) - 1000);
+          lv_label_set_text(id(lbl_handoff_og), og_buf);
+
+          char vol_buf[16];
+          snprintf(vol_buf, sizeof(vol_buf), "%.1f L", id(fermenter_vol_dl) / 10.0f);
+          lv_label_set_text(id(lbl_handoff_vol), vol_buf);
+
+          auto names = BM_FERM_NAMES;
+          auto ips = BM_FERM_IPS;
+          std::string opts = "";
+          int cnt = std::min(6, id(ferm_count));
+          for (int i = 0; i < cnt; i++) {
+            if (!opts.empty()) opts += "\n";
+            opts += *names.at(i) + " (" + *ips.at(i) + ")";
+          }
+          if (opts.empty()) opts = "No Fermenters Paired";
+          lv_dropdown_set_options(id(handoff_ferm_dd)->obj, opts.c_str());
+
+  - id: cmd_send_to_fermenter
+    then:
+      - if:
+          condition:
+            lambda: 'return id(ferm_count) > 0;'
+          then:
+            - lambda: 'id(status_text) = "SENDING TO FERMENTER...";'
+            - http_request.post:
+                url: !lambda |-
+                  int idx = lv_dropdown_get_selected(id(handoff_ferm_dd)->obj);
+                  auto ips = BM_FERM_IPS;
+                  std::string ip = (idx >= 0 && idx < id(ferm_count)) ? *ips.at(idx) : "";
+                  return "http://" + ip + "/brew_handoff";
+                request_headers:
+                  Content-Type: application/json
+                body: !lambda |-
+                  auto esc_json = [](const std::string &s) {
+                    std::string out;
+                    for (char c : s) {
+                      if (c == '"' || c == '\\') out += '\\';
+                      out += c;
+                    }
+                    return out;
+                  };
+                  char buf[320];
+                  snprintf(buf, sizeof(buf),
+                    "{\"recipe\":\"%s\",\"og\":%.3f,\"est_fg\":%.3f,\"vol_l\":%.1f,\"yeast\":\"%s\",\"ferm_stages\":\"%s\"}",
+                    esc_json(id(recipe_name)).c_str(),
+                    id(measured_og_pts) / 1000.0f,
+                    id(recipe_est_fg_pts) / 1000.0f,
+                    id(fermenter_vol_dl) / 10.0f,
+                    esc_json(id(recipe_yeast)).c_str(),
+                    esc_json(id(recipe_ferm_stages)).c_str());
+                  return std::string(buf);
+                on_response:
+                  then:
+                    - lambda: |-
+                        int idx = lv_dropdown_get_selected(id(handoff_ferm_dd)->obj);
+                        auto names = BM_FERM_NAMES;
+                        std::string fname = (idx >= 0 && idx < id(ferm_count)) ? *names.at(idx) : "Fermenter";
+                        lv_obj_set_hidden(id(brew_handoff_modal), true);
+                        id(status_text) = "SENT TO " + fname + "!";
+                on_error:
+                  then:
+                    - lambda: |-
+                        id(status_text) = "ERR: FERMENTER UNREACHABLE";
 
   - id: sync_recipe_sliders
     then:
       - lambda: |-
           lv_textarea_set_text(id(recipe_name_ta), id(recipe_name).c_str());
       - script.execute: update_recipe_highlights
+
   - id: save_to_selected_slot
     then:
       - lambda: |-
@@ -139,6 +317,10 @@ script:
             if (i > 0) packed += ",";
             packed += std::to_string(*h.at(i));
           }
+          packed += "||" + std::to_string(id(recipe_est_og_pts)) +
+                    "|" + std::to_string(id(recipe_est_fg_pts)) +
+                    "|" + id(recipe_yeast) +
+                    "|" + id(recipe_ferm_stages);
           int s = id(selected_slot);
           if (s >= 1 && s <= 8) {
             *BM_SLOT_NAMES.at(s - 1) = "Slot " + std::to_string(s) + ": " + id(recipe_name);
@@ -160,6 +342,13 @@ script:
           if (!bm_unpack_recipe(raw, t, m, h, ms, bt, bp, hc)) {
             ms = 1; *t.at(0) = 65.0f; *m.at(0) = 60;
           }
+          bm_unpack_ferm_meta(
+              raw,
+              id(recipe_est_og_pts),
+              id(recipe_est_fg_pts),
+              id(recipe_yeast),
+              id(recipe_ferm_stages));
+          id(measured_og_pts) = id(recipe_est_og_pts);
           id(active_mash_steps) = ms;
           id(boil_time_min) = bt;
           id(boil_power_pct) = bp;
@@ -319,6 +508,7 @@ script:
           id(active_h1_pct) = 0;
           id(active_h2_pct) = 0;
           id(runaway_sec) = 0;
+          lv_obj_set_hidden(id(brew_handoff_modal), true);
 
   - id: restore_brew_session
     then:
@@ -383,6 +573,10 @@ script:
             }
           } else if (st == 4) {
             id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+            if (id(ferm_ctrl_enabled) && id(ferm_count) > 0) {
+              id(update_handoff_modal).execute();
+              lv_obj_set_hidden(id(brew_handoff_modal), false);
+            }
           }
 
   - id: register_beerxml_uploader
@@ -734,6 +928,10 @@ interval:
               call.set_mode("OFF");
               call.perform();
               id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+                if (id(ferm_ctrl_enabled) && id(ferm_count) > 0) {
+                id(update_handoff_modal).execute();
+                lv_obj_set_hidden(id(brew_handoff_modal), false);
+              }
             }
           } else if (id(brew_state) == 0 && id(paused_state) == 3 && id(seconds_remaining) > 0) {
             // Keep boil timer running during Safe-Pause if hops were added & wort >= 80C (isomerization active)

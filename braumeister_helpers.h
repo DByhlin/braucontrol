@@ -104,9 +104,32 @@ async function sendXml(){
     const hops=Array.from(doc.querySelectorAll('HOP')).filter(h=>['Boil','First Wort'].includes((h.querySelector('USE')?.textContent||'').trim())).slice(0,8);
     let hPart=[];
     for(let i=0;i<hops.length;i++){hPart.push(Math.round(parseFloat(hops.at(i).querySelector('TIME')?.textContent||'0')));}
-    const packed='PACKED|'+rName+'|'+sCount+'|'+sPart.join(';')+'|'+bTime+',85|'+hops.length+'|'+hPart.join(',');
+
+    // Extract Est OG, Est FG, Yeast Name & Fermentation Stages
+    const estOg=Math.round(parseFloat(doc.querySelector('RECIPE > EST_OG')?.textContent||'1.050')*1000);
+    const estFg=Math.round(parseFloat(doc.querySelector('RECIPE > EST_FG')?.textContent||'1.012')*1000);
+    const yeast=(doc.querySelector('YEAST > NAME')?.textContent?.trim()||'Standard Ale/Lager').replace(/\|/g,'-').slice(0,36);
+
+    const stages=parseInt(doc.querySelector('RECIPE > FERMENTATION_STAGES')?.textContent||'1',10);
+    let fStages=[];
+    const pTemp=parseFloat(doc.querySelector('RECIPE > PRIMARY_TEMP')?.textContent||'');
+    const pAge=Math.round(parseFloat(doc.querySelector('RECIPE > PRIMARY_AGE')?.textContent||'14'));
+    if(!isNaN(pTemp)) fStages.push(pTemp.toFixed(1)+','+pAge);
+    if(stages>=2){
+      const sTemp=parseFloat(doc.querySelector('RECIPE > SECONDARY_TEMP')?.textContent||'');
+      const sAge=Math.round(parseFloat(doc.querySelector('RECIPE > SECONDARY_AGE')?.textContent||'7'));
+      if(!isNaN(sTemp)) fStages.push(sTemp.toFixed(1)+','+sAge);
+    }
+    if(stages>=3){
+      const tTemp=parseFloat(doc.querySelector('RECIPE > TERTIARY_TEMP')?.textContent||'');
+      const tAge=Math.round(parseFloat(doc.querySelector('RECIPE > TERTIARY_AGE')?.textContent||'7'));
+      if(!isNaN(tTemp)) fStages.push(tTemp.toFixed(1)+','+tAge);
+    }
+    if(fStages.length===0) fStages.push('18.0,14');
+
+    const packed='PACKED|'+rName+'|'+sCount+'|'+sPart.join(';')+'|'+bTime+',85|'+hops.length+'|'+hPart.join(',')+'||'+estOg+'|'+estFg+'|'+yeast+'|'+fStages.join(';');
     const res=await fetch('/brewcontrol?value='+encodeURIComponent(packed),{method:'POST'});
-    if(res.ok){msg.style.color='#34d399';msg.innerText='Loaded "'+rName+'" ('+sCount+' steps, '+hops.length+' hops).';poll();}
+    if(res.ok){msg.style.color='#34d399';msg.innerText='Loaded "'+rName+'" ('+sCount+' steps, '+hops.length+' hops, OG '+(estOg/1000).toFixed(3)+').';poll();}
     else{msg.style.color='#f87171';msg.innerText='Upload failed: HTTP '+res.status;}
   }catch(err){msg.style.color='#f87171';msg.innerText='Error: '+err.message;}
 }
@@ -168,7 +191,8 @@ inline bool bm_unpack_recipe(
   if (p4 == std::string::npos) return false;
 
   // Compact format: ms|t1,m1;t2,m2|bt,bp|hc|h1,h2
-  if (raw.find(';', p1 + 1) != std::string::npos || raw.find('|', p4 + 1) == std::string::npos) {
+  size_t next_bar = raw.find('|', p4 + 1);
+  if (next_bar == std::string::npos || raw.substr(next_bar, 2) == "||") {
     out_ms = std::max(1, std::min(8, atoi(raw.substr(0, p1).c_str())));
     std::string steps_str = raw.substr(p1 + 1, p2 - p1 - 1);
     size_t sp = 0;
@@ -186,7 +210,10 @@ inline bool bm_unpack_recipe(
     out_bt = 60; out_bp = 85;
     sscanf(raw.substr(p2 + 1, p3 - p2 - 1).c_str(), "%d,%d", &out_bt, &out_bp);
     out_hc = std::max(0, std::min(8, atoi(raw.substr(p3 + 1, p4 - p3 - 1).c_str())));
-    std::string hops_str = raw.substr(p4 + 1);
+    size_t meta_pos = raw.find("||", p4 + 1);
+    std::string hops_str = (meta_pos == std::string::npos)
+        ? raw.substr(p4 + 1)
+        : raw.substr(p4 + 1, meta_pos - p4 - 1);
     size_t hp = 0;
     for (int i = 0; i < out_hc && hp < hops_str.size(); i++) {
       size_t next_h = hops_str.find(',', hp);
@@ -200,11 +227,58 @@ inline bool bm_unpack_recipe(
   return false;
 }
 
+inline void bm_unpack_ferm_meta(
+    const std::string &raw,
+    int &out_og_pts,
+    int &out_fg_pts,
+    std::string &out_yeast,
+    std::string &out_stages) {
+  out_og_pts = 1050;
+  out_fg_pts = 1012;
+  out_yeast = "Standard Ale/Lager";
+  out_stages = "18.0,14";
+
+  size_t meta_pos = raw.find("||");
+  if (meta_pos == std::string::npos) return;
+
+  std::string meta = raw.substr(meta_pos + 2);
+  size_t m1 = meta.find('|');
+  size_t m2 = (m1 != std::string::npos) ? meta.find('|', m1 + 1) : std::string::npos;
+  size_t m3 = (m2 != std::string::npos) ? meta.find('|', m2 + 1) : std::string::npos;
+  if (m3 == std::string::npos) return;
+
+  int og_p = atoi(meta.substr(0, m1).c_str());
+  int fg_p = atoi(meta.substr(m1 + 1, m2 - m1 - 1).c_str());
+  if (og_p >= 1000 && og_p <= 1150) out_og_pts = og_p;
+  if (fg_p >= 990 && fg_p <= 1100) out_fg_pts = fg_p;
+
+  std::string y_str = meta.substr(m2 + 1, m3 - m2 - 1);
+  if (!y_str.empty()) out_yeast = y_str;
+
+  std::string fs_str = meta.substr(m3 + 1);
+  if (!fs_str.empty()) out_stages = fs_str;
+}
+
 #define BM_TEMPS std::vector<float*>{&id(mash_temp_1), &id(mash_temp_2), &id(mash_temp_3), &id(mash_temp_4), &id(mash_temp_5), &id(mash_temp_6), &id(mash_temp_7), &id(mash_temp_8)}
 #define BM_TIMES std::vector<int*>{&id(mash_time_1), &id(mash_time_2), &id(mash_time_3), &id(mash_time_4), &id(mash_time_5), &id(mash_time_6), &id(mash_time_7), &id(mash_time_8)}
 #define BM_HOPS  std::vector<int*>{&id(hop_time_1), &id(hop_time_2), &id(hop_time_3), &id(hop_time_4), &id(hop_time_5), &id(hop_time_6), &id(hop_time_7), &id(hop_time_8)}
 #define BM_SLOT_NAMES std::vector<std::string*>{&id(slot1_name), &id(slot2_name), &id(slot3_name), &id(slot4_name), &id(slot5_name), &id(slot6_name), &id(slot7_name), &id(slot8_name)}
 #define BM_SLOT_DATA  std::vector<std::string*>{&id(slot1_data), &id(slot2_data), &id(slot3_data), &id(slot4_data), &id(slot5_data), &id(slot6_data), &id(slot7_data), &id(slot8_data)}
+
+#define BM_FERM_NAMES std::vector<std::string*>{&id(ferm1_name), &id(ferm2_name), &id(ferm3_name), &id(ferm4_name), &id(ferm5_name), &id(ferm6_name)}
+#define BM_FERM_IPS   std::vector<std::string*>{&id(ferm1_ip), &id(ferm2_ip), &id(ferm3_ip), &id(ferm4_ip), &id(ferm5_ip), &id(ferm6_ip)}
+
+inline void bm_del_fermenter(std::vector<std::string*> &names, std::vector<std::string*> &ips, int &count, int idx_1based) {
+  if (count > 0 && idx_1based >= 1 && idx_1based <= count) {
+    for (int i = idx_1based - 1; i < count - 1; i++) {
+      *names.at(i) = *names.at(i + 1);
+      *ips.at(i) = *ips.at(i + 1);
+    }
+    *names.at(count - 1) = "";
+    *ips.at(count - 1) = "";
+    count--;
+  }
+}
 
 #include <cstdlib>
 #include <cstring>

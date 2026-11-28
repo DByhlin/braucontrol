@@ -941,6 +941,235 @@ lvgl:
                         text_color: 0xFFFFFF
                         text: "CONTINUE"
 
+        # End-of-Brew Fermenter Handoff Modal
+        - obj:
+            id: brew_handoff_modal
+            align: CENTER
+            width: 680
+            height: 360
+            bg_color: 0x111827
+            border_width: 3
+            border_color: 0x10B981
+            radius: 16
+            hidden: true
+            scrollable: false
+            pad_all: 0
+            widgets:
+              - obj:
+                  x: 40
+                  y: 0
+                  width: 600
+                  height: 5
+                  bg_color: 0x10B981
+                  border_width: 0
+                  radius: 2
+              - label:
+                  align: TOP_MID
+                  y: 14
+                  text_font: montserrat_28
+                  text_color: 0x10B981
+                  text: "BOIL COMPLETE — SEND TO FERMENTER"
+              - label:
+                  id: lbl_handoff_recipe
+                  align: TOP_MID
+                  y: 48
+                  text_color: 0x94A3B8
+                  text: "Recipe: German Pilsner"
+
+              # Row 1: Paired Fermenter Dropdown (1 to 6 units)
+              - label:
+                  x: 24
+                  y: 88
+                  text_color: 0xCBD5E1
+                  text: "FERMENTER"
+              - dropdown:
+                  id: handoff_ferm_dd
+                  x: 210
+                  y: 76
+                  width: 446
+                  height: 46
+                  options:
+                    - "Fermenter 1"
+
+              # Row 2: Measured Original Gravity (OG) Stepper
+              - label:
+                  x: 24
+                  y: 148
+                  text_color: 0xCBD5E1
+                  text: "MEASURED OG"
+              - button:
+                  x: 210
+                  y: 134
+                  width: 68
+                  height: 48
+                  bg_color: 0x334155
+                  on_click:
+                    - lambda: 'id(measured_og_pts) = std::max(1000, id(measured_og_pts) - 5);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-.005"
+              - button:
+                  x: 286
+                  y: 134
+                  width: 62
+                  height: 48
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: 'id(measured_og_pts) = std::max(1000, id(measured_og_pts) - 1);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-.001"
+              - label:
+                  id: lbl_handoff_og
+                  x: 365
+                  y: 142
+                  text_font: montserrat_28
+                  text_color: 0xFACC15
+                  text: "1.050"
+              - button:
+                  x: 515
+                  y: 134
+                  width: 62
+                  height: 48
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: 'id(measured_og_pts) = std::min(1150, id(measured_og_pts) + 1);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+.001"
+              - button:
+                  x: 585
+                  y: 134
+                  width: 68
+                  height: 48
+                  bg_color: 0x334155
+                  on_click:
+                    - lambda: 'id(measured_og_pts) = std::min(1150, id(measured_og_pts) + 5);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+.005"
+
+              # Row 3: Fermenter Volume (Liters) Stepper
+              - label:
+                  x: 24
+                  y: 208
+                  text_color: 0xCBD5E1
+                  text: "BATCH VOLUME"
+              - button:
+                  x: 210
+                  y: 194
+                  width: 68
+                  height: 48
+                  bg_color: 0x334155
+                  on_click:
+                    - lambda: 'id(fermenter_vol_dl) = std::max(10, id(fermenter_vol_dl) - 10);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-1.0L"
+              - button:
+                  x: 286
+                  y: 194
+                  width: 62
+                  height: 48
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: 'id(fermenter_vol_dl) = std::max(10, id(fermenter_vol_dl) - 1);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "-0.1L"
+              - label:
+                  id: lbl_handoff_vol
+                  x: 368
+                  y: 202
+                  text_font: montserrat_28
+                  text_color: 0x38BDF8
+                  text: "20.0 L"
+              - button:
+                  x: 515
+                  y: 194
+                  width: 62
+                  height: 48
+                  bg_color: 0x1E293B
+                  on_click:
+                    - lambda: 'id(fermenter_vol_dl) = std::min(1000, id(fermenter_vol_dl) + 1);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+0.1L"
+              - button:
+                  x: 585
+                  y: 194
+                  width: 68
+                  height: 48
+                  bg_color: 0x334155
+                  on_click:
+                    - lambda: 'id(fermenter_vol_dl) = std::min(1000, id(fermenter_vol_dl) + 10);'
+                    - script.execute: update_handoff_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "+1.0L"
+
+              # Divider
+              - obj:
+                  x: 24
+                  y: 258
+                  width: 632
+                  height: 1
+                  bg_color: 0x1F2937
+                  border_width: 0
+
+              # Bottom Action Buttons
+              - button:
+                  x: 24
+                  y: 274
+                  width: 240
+                  height: 64
+                  bg_color: 0x334155
+                  border_width: 1
+                  border_color: 0x475569
+                  radius: 12
+                  on_click:
+                    - lambda: |-
+                        lv_obj_set_hidden(id(brew_handoff_modal), true);
+                        id(status_text) = "BOIL COMPLETE - READY TO CHILL";
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_color: 0xE2E8F0
+                        text: "CLOSE / SKIP"
+
+              - button:
+                  x: 280
+                  y: 274
+                  width: 376
+                  height: 64
+                  bg_color: 0x059669
+                  border_width: 2
+                  border_color: 0x34D399
+                  radius: 12
+                  on_click:
+                    - script.execute: cmd_send_to_fermenter
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text_font: montserrat_20
+                        text_color: 0xFFFFFF
+                        text: "SEND TO FERMENTER"
+
     - id: hardware_page
       widgets:
         - *home_btn
@@ -956,411 +1185,833 @@ lvgl:
             text_color: 0x38BDF8
             text: "BM50 | 3300W | 2 EL | 2 PMP | 16A"
 
-        # Card 1: Kettle Model, Elements, Pumps & 230V Fuse Limit (Amber Accent)
-        - obj:
+        - tabview:
+            id: hw_tabs
             x: 20
-            y: 68
+            y: 62
             width: 760
-            height: 226
+            height: 404
             bg_color: 0x111827
             border_width: 1
             border_color: 0x1F2937
             radius: 14
-            scrollable: false
-            pad_all: 0
-            widgets:
-              - obj:
-                  x: 0
-                  y: 18
-                  width: 5
-                  height: 190
-                  bg_color: 0xF59E0B
-                  border_width: 0
-                  radius: 3
+            clip_corner: true
+            anim_duration: 0s
+            on_value:
+              - script.execute: update_hardware_highlights
 
-              # Row 1: Model Presets
-              - label:
-                  x: 22
-                  y: 26
-                  text_color: 0x94A3B8
-                  text: "MODEL PRESET"
-              - button:
-                  id: btn_mod_bm10
-                  x: 185
-                  y: 12
-                  width: 180
-                  height: 44
-                  on_click:
-                    - lambda: |-
-                        id(num_elements) = 1;
-                        id(num_pumps) = 1;
-                        id(element_watts) = 1200;
-                        id(manual_htr_2) = false;
-                        id(heater_2_pwm).set_level(0.0f);
-                        id(pump_2).turn_off();
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "BM10 (1.2kW)"
-              - button:
-                  id: btn_mod_bm20
-                  x: 375
-                  y: 12
-                  width: 180
-                  height: 44
-                  on_click:
-                    - lambda: |-
-                        id(num_elements) = 1;
-                        id(num_pumps) = 1;
-                        id(element_watts) = 2000;
-                        id(manual_htr_2) = false;
-                        id(heater_2_pwm).set_level(0.0f);
-                        id(pump_2).turn_off();
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "BM20 (2.0kW)"
-              - button:
-                  id: btn_mod_bm50
-                  x: 565
-                  y: 12
-                  width: 180
-                  height: 44
-                  on_click:
-                    - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3300;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "BM50 (3.3kW)"
+            tabs:
+              - name: "KETTLE & FUSE"
+                pad_all: 8
+                scrollable: false
+                widgets:
+                  - label:
+                      x: 14
+                      y: 26
+                      text_color: 0x94A3B8
+                      text: "MODEL PRESET"
+                  - button:
+                      id: btn_mod_bm10
+                      x: 175
+                      y: 12
+                      width: 180
+                      height: 48
+                      on_click:
+                        - lambda: |-
+                            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 1200;
+                            id(manual_htr_2) = false; id(heater_2_pwm).set_level(0.0f); id(pump_2).turn_off();
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "BM10 (1.2kW)"
+                  - button:
+                      id: btn_mod_bm20
+                      x: 365
+                      y: 12
+                      width: 180
+                      height: 48
+                      on_click:
+                        - lambda: |-
+                            id(num_elements) = 1; id(num_pumps) = 1; id(element_watts) = 2000;
+                            id(manual_htr_2) = false; id(heater_2_pwm).set_level(0.0f); id(pump_2).turn_off();
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "BM20 (2.0kW)"
+                  - button:
+                      id: btn_mod_bm50
+                      x: 555
+                      y: 12
+                      width: 180
+                      height: 48
+                      on_click:
+                        - lambda: 'id(num_elements) = 2; id(num_pumps) = 2; id(element_watts) = 3300;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "BM50 (3.3kW)"
 
-              # Row 2: Heating Elements & Circulation Pumps
-              - label:
-                  x: 22
-                  y: 80
-                  text_color: 0x94A3B8
-                  text: "ELEMENTS"
-              - button:
-                  id: btn_el_1
-                  x: 185
-                  y: 66
-                  width: 105
-                  height: 44
-                  on_click:
-                    - lambda: |-
-                        id(num_elements) = 1;
-                        if (id(element_watts) > 2000) id(element_watts) = 2000;
-                        id(manual_htr_2) = false;
-                        id(heater_2_pwm).set_level(0.0f);
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "1 EL"
-              - button:
-                  id: btn_el_2
-                  x: 298
-                  y: 66
-                  width: 105
-                  height: 44
-                  on_click:
-                    - lambda: 'id(num_elements) = 2; id(element_watts) = 3300;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "2 EL"
+                  - label:
+                      x: 14
+                      y: 92
+                      text_color: 0x94A3B8
+                      text: "ELEMENTS"
+                  - button:
+                      id: btn_el_1
+                      x: 175
+                      y: 78
+                      width: 105
+                      height: 48
+                      on_click:
+                        - lambda: |-
+                            id(num_elements) = 1;
+                            if (id(element_watts) > 2000) id(element_watts) = 2000;
+                            id(manual_htr_2) = false; id(heater_2_pwm).set_level(0.0f);
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "1 EL"
+                  - button:
+                      id: btn_el_2
+                      x: 288
+                      y: 78
+                      width: 105
+                      height: 48
+                      on_click:
+                        - lambda: 'id(num_elements) = 2; id(element_watts) = 3300;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "2 EL"
 
-              - label:
-                  x: 435
-                  y: 80
-                  text_color: 0x94A3B8
-                  text: "PUMPS"
-              - button:
-                  id: btn_pmp_1
-                  x: 527
-                  y: 66
-                  width: 105
-                  height: 44
-                  on_click:
-                    - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "1 PMP"
-              - button:
-                  id: btn_pmp_2
-                  x: 640
-                  y: 66
-                  width: 105
-                  height: 44
-                  on_click:
-                    - lambda: 'id(num_pumps) = 2;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "2 PMP"
+                  - label:
+                      x: 425
+                      y: 92
+                      text_color: 0x94A3B8
+                      text: "PUMPS"
+                  - button:
+                      id: btn_pmp_1
+                      x: 517
+                      y: 78
+                      width: 105
+                      height: 48
+                      on_click:
+                        - lambda: 'id(num_pumps) = 1; id(pump_2).turn_off();'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "1 PMP"
+                  - button:
+                      id: btn_pmp_2
+                      x: 630
+                      y: 78
+                      width: 105
+                      height: 48
+                      on_click:
+                        - lambda: 'id(num_pumps) = 2;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "2 PMP"
 
-              # Row 3: 230V Breaker / Fuse Limit
-              - label:
-                  x: 22
-                  y: 134
-                  text_color: 0x94A3B8
-                  text: "230V FUSE LIMIT"
-              - button:
-                  id: btn_amp_10
-                  x: 185
-                  y: 120
-                  width: 133
-                  height: 44
-                  on_click:
-                    - lambda: 'id(max_amps) = 10;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "10A (2.3kW)"
-              - button:
-                  id: btn_amp_13
-                  x: 327
-                  y: 120
-                  width: 133
-                  height: 44
-                  on_click:
-                    - lambda: 'id(max_amps) = 13;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "13A (3.0kW)"
-              - button:
-                  id: btn_amp_16
-                  x: 469
-                  y: 120
-                  width: 133
-                  height: 44
-                  on_click:
-                    - lambda: 'id(max_amps) = 16;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "16A (3.6kW)"
-              - button:
-                  id: btn_amp_0
-                  x: 612
-                  y: 120
-                  width: 133
-                  height: 44
-                  on_click:
-                    - lambda: 'id(max_amps) = 0;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "MAX / OFF"
+                  - label:
+                      x: 14
+                      y: 158
+                      text_color: 0x94A3B8
+                      text: "230V FUSE LIMIT"
+                  - button:
+                      id: btn_amp_10
+                      x: 175
+                      y: 144
+                      width: 133
+                      height: 48
+                      on_click:
+                        - lambda: 'id(max_amps) = 10;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "10A (2.3kW)"
+                  - button:
+                      id: btn_amp_13
+                      x: 317
+                      y: 144
+                      width: 133
+                      height: 48
+                      on_click:
+                        - lambda: 'id(max_amps) = 13;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "13A (3.0kW)"
+                  - button:
+                      id: btn_amp_16
+                      x: 459
+                      y: 144
+                      width: 133
+                      height: 48
+                      on_click:
+                        - lambda: 'id(max_amps) = 16;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "16A (3.6kW)"
+                  - button:
+                      id: btn_amp_0
+                      x: 602
+                      y: 144
+                      width: 133
+                      height: 48
+                      on_click:
+                        - lambda: 'id(max_amps) = 0;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "MAX / OFF"
 
-              # Row 4: Custom Pump Run / Rest Intervals & Probe Swap
-              - label:
-                  x: 22
-                  y: 182
-                  text_color: 0x94A3B8
-                  text: "PUMP CYCLE"
-              - button:
-                  x: 185
-                  y: 172
-                  width: 48
-                  height: 38
-                  on_click:
-                    - lambda: 'if (id(pump_run_min) > 1) id(pump_run_min) -= 1;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "-1m"
-              - button:
-                  x: 239
-                  y: 172
-                  width: 48
-                  height: 38
-                  on_click:
-                    - lambda: 'if (id(pump_run_min) < 30) id(pump_run_min) += 1;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "+1m"
-              - label:
-                  id: lbl_pump_cycle_val
-                  x: 302
-                  y: 182
-                  text_color: 0x38BDF8
-                  text: "Run 10m / Rest 1m"
-              - button:
-                  x: 495
-                  y: 172
-                  width: 48
-                  height: 38
-                  on_click:
-                    - lambda: 'if (id(pump_rest_min) > 0) id(pump_rest_min) -= 1;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "-1m"
-              - button:
-                  x: 549
-                  y: 172
-                  width: 48
-                  height: 38
-                  on_click:
-                    - lambda: 'if (id(pump_rest_min) < 10) id(pump_rest_min) += 1;'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "+1m"
-              - button:
-                  id: btn_swap_probes
-                  x: 610
-                  y: 172
-                  width: 135
-                  height: 38
-                  bg_color: 0x1E293B
-                  on_click:
-                    - lambda: 'id(swap_probes) = !id(swap_probes);'
-                    - script.execute: update_hardware_highlights
-                  widgets:
-                    - label:
-                        id: lbl_swap_probes
-                        align: CENTER
-                        text: "PROBES: NORM"
+                  - label:
+                      x: 14
+                      y: 224
+                      text_color: 0x94A3B8
+                      text: "PUMP CYCLE"
+                  - button:
+                      x: 175
+                      y: 210
+                      width: 48
+                      height: 46
+                      on_click:
+                        - lambda: 'if (id(pump_run_min) > 1) id(pump_run_min) -= 1;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "-1m"
+                  - button:
+                      x: 229
+                      y: 210
+                      width: 48
+                      height: 46
+                      on_click:
+                        - lambda: 'if (id(pump_run_min) < 30) id(pump_run_min) += 1;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "+1m"
+                  - label:
+                      id: lbl_pump_cycle_val
+                      x: 292
+                      y: 224
+                      text_color: 0x38BDF8
+                      text: "Run 10m / Rest 1m"
+                  - button:
+                      x: 485
+                      y: 210
+                      width: 48
+                      height: 46
+                      on_click:
+                        - lambda: 'if (id(pump_rest_min) > 0) id(pump_rest_min) -= 1;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "-1m"
+                  - button:
+                      x: 539
+                      y: 210
+                      width: 48
+                      height: 46
+                      on_click:
+                        - lambda: 'if (id(pump_rest_min) < 10) id(pump_rest_min) += 1;'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "+1m"
+                  - button:
+                      id: btn_swap_probes
+                      x: 600
+                      y: 210
+                      width: 135
+                      height: 46
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: 'id(swap_probes) = !id(swap_probes);'
+                        - script.execute: update_hardware_highlights
+                      widgets:
+                        - label:
+                            id: lbl_swap_probes
+                            align: CENTER
+                            text: "PROBES: NORM"
+              - name: "PID TUNER"
+                pad_all: 8
+                scrollable: false
+                widgets:
+                  - obj:
+                      x: 10
+                      y: 12
+                      width: 722
+                      height: 290
+                      bg_color: 0x0B0F17
+                      border_width: 1
+                      border_color: 0x1F2937
+                      radius: 12
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - obj:
+                            x: 0
+                            y: 20
+                            width: 5
+                            height: 250
+                            bg_color: 0x38BDF8
+                            border_width: 0
+                            radius: 3
+                        - label:
+                            x: 22
+                            y: 18
+                            text_color: 0x38BDF8
+                            text: "PID TEMPERATURE CONTROLLER & AUTO-TUNER"
+                        - obj:
+                            id: autotune_banner
+                            x: 22
+                            y: 56
+                            width: 678
+                            height: 54
+                            bg_color: 0x1E293B
+                            border_width: 1
+                            border_color: 0x334155
+                            radius: 10
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - label:
+                                  id: lbl_autotune_banner
+                                  align: CENTER
+                                  text_color: 0xE2E8F0
+                                  text: "PID TUNER: IDLE (Fill kettle with water before tuning)"
+                        - button:
+                            id: btn_pid_autotune
+                            x: 22
+                            y: 130
+                            width: 678
+                            height: 62
+                            bg_color: 0x059669
+                            border_color: 0x34D399
+                            on_click:
+                              - lambda: |-
+                                  if (std::isnan(id(kettle_temp).state)) {
+                                    id(status_text) = "ERROR: NO KETTLE TEMP SENSOR!";
+                                    lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0xDC2626), 0);
+                                    lv_label_set_text(id(lbl_autotune_banner), "ERROR: NO KETTLE TEMP PROBE DETECTED!");
+                                    return;
+                                  }
+                                  id(manual_htr_1) = false;
+                                  id(manual_htr_2) = false;
+                                  id(autotune_elapsed_sec) = 0;
+                                  id(brew_state) = 5;
+                                  id(pump_1).turn_on();
+                                  if (id(num_pumps) == 2) id(pump_2).turn_on();
+                                  id(status_text) = "PID AUTOTUNE IN PROGRESS (65 C)";
+                              - climate.control:
+                                  id: bm_pid
+                                  mode: HEAT
+                                  target_temperature: 65°C
+                              - climate.pid.autotune: bm_pid
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_font: montserrat_20
+                                  text_color: 0xFFFFFF
+                                  text: "START PID AUTO-TUNE (65°C)"
+                        - button:
+                            x: 22
+                            y: 208
+                            width: 332
+                            height: 58
+                            bg_color: 0x1D4ED8
+                            border_color: 0x3B82F6
+                            on_click:
+                              - script.execute: save_pid_gains
+                              - lambda: |-
+                                  lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x1D4ED8), 0);
+                                  lv_label_set_text(id(lbl_autotune_banner), "ACTIVE PID PARAMETERS SAVED TO FLASH!");
+                            on_long_press:
+                              - lambda: |-
+                                  id(pid_kp) = 0.15f; id(pid_ki) = 0.002f; id(pid_kd) = 1.5f;
+                                  id(bm_pid).set_kp(0.15f); id(bm_pid).set_ki(0.002f); id(bm_pid).set_kd(1.5f);
+                                  lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x475569), 0);
+                                  lv_label_set_text(id(lbl_autotune_banner), "PID RESET TO FACTORY DEFAULTS");
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "SAVE PID (HOLD: RESET)"
+                        - button:
+                            x: 368
+                            y: 208
+                            width: 332
+                            height: 58
+                            bg_color: 0xDC2626
+                            border_color: 0xF87171
+                            on_click:
+                              - script.execute: cmd_stop_all
+                            widgets:
+                              - label:
+                                  align: CENTER
+                                  text_color: 0xFFFFFF
+                                  text: "STOP / ABORT"
+              - name: "FERMENTATION"
+                pad_all: 8
+                scrollable: false
+                widgets:
+                  - checkbox:
+                      id: chk_ferm_enable
+                      x: 12
+                      y: 12
+                      text: "Enable Fermentation Control"
+                      text_color: 0xF8FAFC
+                      on_value:
+                        - lambda: 'id(ferm_ctrl_enabled) = x;'
+                        - script.execute: update_fermentation_ui
 
-        # Card 2: PID Auto-Tune & Flash Storage (Sky Blue Accent)
+                  - button:
+                      id: btn_add_fermenter
+                      x: 525
+                      y: 4
+                      width: 210
+                      height: 44
+                      bg_color: 0x059669
+                      border_color: 0x34D399
+                      on_click:
+                        - lambda: |-
+                            if (!id(ferm_ctrl_enabled) || id(ferm_count) >= 6) return;
+                            lv_dropdown_set_options(id(ferm_discovered_dd)->obj, "Tap SCAN LAN to search...");
+                            lv_textarea_set_text(id(ferm_name_ta), ("Fermenter " + std::to_string(id(ferm_count) + 1)).c_str());
+                            lv_label_set_text(id(lbl_ferm_scan_status), "Tap SCAN LAN to find controllers");
+                            lv_obj_set_hidden(id(add_ferm_modal), false);
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text_color: 0xFFFFFF
+                            text: "+ ADD FERMENTER"
+
+                  - obj:
+                      id: ferm_cards_container
+                      x: 8
+                      y: 56
+                      width: 728
+                      height: 256
+                      bg_opa: TRANSP
+                      border_width: 0
+                      pad_all: 0
+                      scrollable: false
+                      widgets:
+                        # Card 1 (Col 1, Row 1)
+                        - obj:
+                            id: card_ferm_1
+                            x: 0
+                            y: 0
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_1
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_1
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 1);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+
+                        # Card 2 (Col 2, Row 1)
+                        - obj:
+                            id: card_ferm_2
+                            x: 370
+                            y: 0
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_2
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_2
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 2);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+                        # Card 3 (Col 1, Row 2)
+                        - obj:
+                            id: card_ferm_3
+                            x: 0
+                            y: 88
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_3
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_3
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 3);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+
+                        # Card 4 (Col 2, Row 2)
+                        - obj:
+                            id: card_ferm_4
+                            x: 370
+                            y: 88
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_4
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_4
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 4);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+                        # Card 5 (Col 1, Row 3)
+                        - obj:
+                            id: card_ferm_5
+                            x: 0
+                            y: 176
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_5
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_5
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 5);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+
+                        # Card 6 (Col 2, Row 3)
+                        - obj:
+                            id: card_ferm_6
+                            x: 370
+                            y: 176
+                            width: 356
+                            height: 78
+                            bg_color: 0x0B0F17
+                            border_width: 1
+                            border_color: 0x1F2937
+                            radius: 10
+                            hidden: true
+                            scrollable: false
+                            pad_all: 0
+                            widgets:
+                              - obj:
+                                  x: 0
+                                  y: 12
+                                  width: 4
+                                  height: 54
+                                  bg_color: 0x10B981
+                                  border_width: 0
+                              - label:
+                                  id: lbl_ferm_name_6
+                                  x: 14
+                                  y: 12
+                                  text_color: 0xF8FAFC
+                                  text: ""
+                              - label:
+                                  id: lbl_ferm_ip_6
+                                  x: 14
+                                  y: 42
+                                  text_color: 0x38BDF8
+                                  text: ""
+                              - button:
+                                  x: 286
+                                  y: 18
+                                  width: 56
+                                  height: 42
+                                  bg_color: 0x7F1D1D
+                                  border_color: 0xDC2626
+                                  on_click:
+                                    - lambda: 'auto n = BM_FERM_NAMES; auto p = BM_FERM_IPS; bm_del_fermenter(n, p, id(ferm_count), 6);'
+                                    - script.execute: update_fermentation_ui
+                                  widgets:
+                                    - label:
+                                        align: CENTER
+                                        text_color: 0xFCA5A5
+                                        text: "DEL"
+
+                        - label:
+                            id: lbl_ferm_placeholder
+                            align: CENTER
+                            text_color: 0x64748B
+                            text: "Enable Fermentation Control above to pair controllers."
         - obj:
-            x: 20
-            y: 306
-            width: 760
-            height: 158
+            id: add_ferm_modal
+            align: TOP_MID
+            y: 16
+            width: 640
+            height: 220
             bg_color: 0x111827
-            border_width: 1
-            border_color: 0x1F2937
-            radius: 14
+            border_width: 3
+            border_color: 0x10B981
+            radius: 16
+            hidden: true
             scrollable: false
             pad_all: 0
             widgets:
-              - obj:
-                  x: 0
-                  y: 16
-                  width: 5
-                  height: 126
-                  bg_color: 0x38BDF8
-                  border_width: 0
-                  radius: 3
               - label:
-                  x: 22
+                  id: lbl_ferm_scan_status
+                  x: 20
                   y: 12
                   text_color: 0x38BDF8
-                  text: "PID TEMPERATURE CONTROLLER & AUTO-TUNER"
-              - obj:
-                  id: autotune_banner
-                  x: 22
-                  y: 38
-                  width: 722
-                  height: 42
-                  bg_color: 0x1E293B
-                  border_width: 1
-                  border_color: 0x334155
-                  radius: 10
-                  scrollable: false
-                  pad_all: 0
-                  widgets:
-                    - label:
-                        id: lbl_autotune_banner
-                        align: CENTER
-                        text_color: 0xE2E8F0
-                        text: "PID TUNER: IDLE (Fill kettle with water before tuning)"
-
+                  text: "Tap SCAN LAN to find controllers"
               - button:
-                  id: btn_pid_autotune
-                  x: 22
-                  y: 90
-                  width: 265
-                  height: 52
-                  bg_color: 0x059669
-                  border_color: 0x34D399
-                  on_click:
-                    - lambda: |-
-                        if (std::isnan(id(kettle_temp).state)) {
-                          id(status_text) = "ERROR: NO KETTLE TEMP SENSOR!";
-                          lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0xDC2626), 0);
-                          lv_label_set_text(id(lbl_autotune_banner), "ERROR: NO KETTLE TEMP PROBE DETECTED!");
-                          return;
-                        }
-                        id(manual_htr_1) = false;
-                        id(manual_htr_2) = false;
-                        id(autotune_elapsed_sec) = 0;
-                        id(brew_state) = 5;
-                        id(pump_1).turn_on();
-                        if (id(num_pumps) == 2) id(pump_2).turn_on();
-                        id(status_text) = "PID AUTOTUNE IN PROGRESS (65 C)";
-                    - climate.control:
-                        id: bm_pid
-                        mode: HEAT
-                        target_temperature: 65°C
-                    - climate.pid.autotune: bm_pid
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text_color: 0xFFFFFF
-                        text: "START PID TUNE (65°C)"
-
-              - button:
-                  x: 299
-                  y: 90
-                  width: 215
-                  height: 52
+                  x: 20
+                  y: 42
+                  width: 130
+                  height: 46
                   bg_color: 0x1D4ED8
                   border_color: 0x3B82F6
                   on_click:
-                    - script.execute: save_pid_gains
-                    - lambda: |-
-                        lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x1D4ED8), 0);
-                        lv_label_set_text(id(lbl_autotune_banner), "ACTIVE PID PARAMETERS SAVED TO FLASH!");
-                  on_long_press:
-                    - lambda: |-
-                        id(pid_kp) = 0.15f;
-                        id(pid_ki) = 0.002f;
-                        id(pid_kd) = 1.5f;
-                        id(bm_pid).set_kp(0.15f);
-                        id(bm_pid).set_ki(0.002f);
-                        id(bm_pid).set_kd(1.5f);
-                        lv_obj_set_style_bg_color(id(autotune_banner), lv_color_hex(0x475569), 0);
-                        lv_label_set_text(id(lbl_autotune_banner), "PID RESET TO FACTORY DEFAULTS");
+                    - script.execute: scan_fermenter_controllers
                   widgets:
                     - label:
                         align: CENTER
-                        text_color: 0xFFFFFF
-                        text: "SAVE PID (HOLD: RST)"
-
-              - button:
-                  x: 526
-                  y: 90
-                  width: 218
-                  height: 52
-                  bg_color: 0xDC2626
-                  border_color: 0xF87171
+                        text: "SCAN LAN"
+              - dropdown:
+                  id: ferm_discovered_dd
+                  x: 160
+                  y: 42
+                  width: 460
+                  height: 46
+                  options:
+                    - "Tap SCAN LAN to search..."
+              - textarea:
+                  id: ferm_name_ta
+                  x: 20
+                  y: 100
+                  width: 600
+                  height: 46
+                  placeholder_text: "Enter Fermenter Name (e.g., Conical 1)"
+                  one_line: true
                   on_click:
-                    - script.execute: cmd_stop_all
+                    - lvgl.keyboard.update:
+                        id: hw_ferm_kb
+                        textarea: ferm_name_ta
+                    - lvgl.widget.show: hw_ferm_kb
+                  on_ready:
+                    - lvgl.widget.hide: hw_ferm_kb
+              - button:
+                  x: 20
+                  y: 158
+                  width: 240
+                  height: 48
+                  bg_color: 0x334155
+                  on_click:
+                    - lvgl.widget.hide: hw_ferm_kb
+                    - lvgl.widget.hide: add_ferm_modal
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "CANCEL"
+              - button:
+                  x: 274
+                  y: 158
+                  width: 346
+                  height: 48
+                  bg_color: 0x059669
+                  border_color: 0x34D399
+                  on_click:
+                    - script.execute: save_discovered_fermenter
+                    - lvgl.widget.hide: hw_ferm_kb
                   widgets:
                     - label:
                         align: CENTER
                         text_color: 0xFFFFFF
-                        text: "STOP / ABORT"
+                        text: "SAVE AND BACK"
+
+        - keyboard:
+            id: hw_ferm_kb
+            align: BOTTOM_MID
+            width: 800
+            height: 230
+            hidden: true
+
 
     - id: recipe_page
       widgets:
@@ -2259,21 +2910,21 @@ lvgl:
                       on_click:
                         - lambda: |-
                             id(slot1_name) = "Slot 1: German Pilsner";
-                            id(slot1_data) = "3|63,45;72,15;78,10|60,85|2|60,15";
+                            id(slot1_data) = "3|63,45;72,15;78,10|60,85|2|60,15||1048|1010|Saflager W-34/70|10.0,14;16.0,3;2.0,14";
                             id(slot2_name) = "Slot 2: West Coast IPA";
-                            id(slot2_data) = "2|65,60;78,10|60,85|3|60,15,5";
+                            id(slot2_data) = "2|65,60;78,10|60,85|3|60,15,5||1064|1012|Safale US-05|19.0,10;21.0,4;3.0,3";
                             id(slot3_name) = "Slot 3: Hefeweizen";
-                            id(slot3_data) = "4|45,15;52,15;63,35;72,20|60,85|1|60";
+                            id(slot3_data) = "4|45,15;52,15;63,35;72,20|60,85|1|60||1052|1012|Munich Classic|18.0,7;20.0,5";
                             id(slot4_name) = "Slot 4: Empty Preset";
-                            id(slot4_data) = "1|65,60|60,85|0|";
+                            id(slot4_data) = "1|65,60|60,85|0|||1050|1012|Standard Ale/Lager|18.0,14";
                             id(slot5_name) = "Slot 5: Empty Preset";
-                            id(slot5_data) = "1|65,60|60,85|0|";
+                            id(slot5_data) = "1|65,60|60,85|0|||1050|1012|Standard Ale/Lager|18.0,14";
                             id(slot6_name) = "Slot 6: Empty Preset";
-                            id(slot6_data) = "1|65,60|60,85|0|";
+                            id(slot6_data) = "1|65,60|60,85|0|||1050|1012|Standard Ale/Lager|18.0,14";
                             id(slot7_name) = "Slot 7: Empty Preset";
-                            id(slot7_data) = "1|65,60|60,85|0|";
+                            id(slot7_data) = "1|65,60|60,85|0|||1050|1012|Standard Ale/Lager|18.0,14";
                             id(slot8_name) = "Slot 8: Empty Preset";
-                            id(slot8_data) = "1|65,60|60,85|0|";
+                            id(slot8_data) = "1|65,60|60,85|0|||1050|1012|Standard Ale/Lager|18.0,14";
                             id(status_text) = "FACTORY RECIPE SLOTS RESTORED";
                         - script.execute: update_recipe_highlights
                       widgets:
@@ -2394,171 +3045,184 @@ lvgl:
             text_color: 0xF59E0B
             text: "Status: Checking connection..."
 
-        # Left Card: Network & Web Importer Status
-        - obj:
+        - tabview:
+            id: wifi_tabs
             x: 20
-            y: 72
-            width: 320
-            height: 152
+            y: 62
+            width: 760
+            height: 404
             bg_color: 0x111827
             border_width: 1
             border_color: 0x1F2937
             radius: 14
-            scrollable: false
-            pad_all: 0
-            widgets:
-              - obj:
-                  x: 0
-                  y: 16
-                  width: 5
-                  height: 120
-                  bg_color: 0x8B5CF6
-                  border_width: 0
-                  radius: 3
-              - label:
-                  x: 18
-                  y: 14
-                  text_color: 0xA78BFA
-                  text: "WEB INTERFACE & BEERXML"
-              - label:
-                  x: 18
-                  y: 44
-                  text_color: 0x94A3B8
-                  text: "Open in browser on same Wi-Fi:"
-              - label:
-                  id: wifi_web_url
-                  x: 18
-                  y: 68
-                  text_color: 0x38BDF8
-                  text: "http://192.168.4"
-              - label:
-                  x: 18
-                  y: 102
-                  text_color: 0x64748B
-                  text: "Fallback AP: BM-BrewController"
+            clip_corner: true
+            anim_duration: 0s
 
-        # Right Card: 2.4 GHz Network Selector & Credentials
-        - obj:
-            x: 355
-            y: 72
-            width: 425
-            height: 152
-            bg_color: 0x111827
-            border_width: 1
-            border_color: 0x1F2937
-            radius: 14
-            scrollable: false
-            pad_all: 0
-            widgets:
-              - button:
-                  x: 14
-                  y: 14
-                  width: 110
-                  height: 46
-                  bg_color: 0x1D4ED8
-                  border_color: 0x3B82F6
-                  on_click:
-                    - lambda: |-
-                        lv_label_set_text(id(wifi_conn_info), "Scanning for 2.4 GHz networks...");
-                        wifi_scan_config_t scan_config = {};
-                        scan_config.show_hidden = false;
-                        if (esp_wifi_scan_start(&scan_config, true) == ESP_OK) {
-                          uint16_t ap_count = 0;
-                          esp_wifi_scan_get_ap_num(&ap_count);
-                          if (ap_count > 15) ap_count = 15;
-                          if (ap_count > 0) {
-                            std::vector<wifi_ap_record_t> ap_list(ap_count);
-                            if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
-                              std::string opts = "";
-                              for (int i = 0; i < ap_count; i++) {
-                                std::string ssid_str = bm_safe_ssid(ap_list.at(i).ssid);
-                                if (!ssid_str.empty()) {
-                                  if (!opts.empty()) opts += "\n";
-                                  opts += ssid_str;
+            tabs:
+              - name: "2.4 GHZ WIFI"
+                pad_all: 12
+                scrollable: false
+                widgets:
+                  - button:
+                      x: 12
+                      y: 12
+                      width: 150
+                      height: 52
+                      bg_color: 0x1D4ED8
+                      border_color: 0x3B82F6
+                      on_click:
+                        - lambda: |-
+                            lv_label_set_text(id(wifi_conn_info), "Scanning for 2.4 GHz networks...");
+                            wifi_scan_config_t scan_config = {};
+                            scan_config.show_hidden = false;
+                            if (esp_wifi_scan_start(&scan_config, true) == ESP_OK) {
+                              uint16_t ap_count = 0;
+                              esp_wifi_scan_get_ap_num(&ap_count);
+                              if (ap_count > 15) ap_count = 15;
+                              if (ap_count > 0) {
+                                std::vector<wifi_ap_record_t> ap_list(ap_count);
+                                if (esp_wifi_scan_get_ap_records(&ap_count, ap_list.data()) == ESP_OK) {
+                                  std::string opts = "";
+                                  for (int i = 0; i < ap_count; i++) {
+                                    std::string ssid_str = bm_safe_ssid(ap_list.at(i).ssid);
+                                    if (!ssid_str.empty()) {
+                                      if (!opts.empty()) opts += "\n";
+                                      opts += ssid_str;
+                                    }
+                                  }
+                                  if (!opts.empty()) {
+                                    lv_dropdown_set_options(id(wifi_ssid_dd)->obj, opts.c_str());
+                                    lv_label_set_text(id(wifi_conn_info), ("Found " + std::to_string(ap_count) + " network(s)").c_str());
+                                  }
                                 }
+                              } else {
+                                lv_label_set_text(id(wifi_conn_info), "No 2.4 GHz networks found");
                               }
-                              if (!opts.empty()) {
-                                lv_dropdown_set_options(id(wifi_ssid_dd)->obj, opts.c_str());
-                                lv_label_set_text(id(wifi_conn_info), ("Found " + std::to_string(ap_count) + " network(s)").c_str());
-                              }
+                            } else {
+                              lv_label_set_text(id(wifi_conn_info), "Scan failed - try again");
                             }
-                          } else {
-                            lv_label_set_text(id(wifi_conn_info), "No 2.4 GHz networks found");
-                          }
-                        } else {
-                          lv_label_set_text(id(wifi_conn_info), "Scan failed - try again");
-                        }
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "SCAN"
-              - dropdown:
-                  id: wifi_ssid_dd
-                  x: 134
-                  y: 14
-                  width: 277
-                  height: 46
-                  options:
-                    - "Tap SCAN to find Wi-Fi"
-              - textarea:
-                  id: wifi_pass_ta
-                  x: 14
-                  y: 74
-                  width: 225
-                  height: 52
-                  placeholder_text: "Wi-Fi Password"
-                  password_mode: true
-                  one_line: true
-                  on_click:
-                    - lvgl.keyboard.update:
-                        id: on_screen_kb
-                        textarea: wifi_pass_ta
-                    - lvgl.widget.show: on_screen_kb
-                  on_ready:
-                    - lvgl.widget.hide: on_screen_kb
-              - button:
-                  id: btn_wifi_eye
-                  x: 247
-                  y: 74
-                  width: 68
-                  height: 52
-                  bg_color: 0x1E293B
-                  on_click:
-                    - lambda: |-
-                        bool cur = lv_textarea_get_password_mode(id(wifi_pass_ta));
-                        lv_textarea_set_password_mode(id(wifi_pass_ta), !cur);
-                        lv_label_set_text(id(lbl_wifi_eye), cur ? "HIDE" : "SHOW");
-                  widgets:
-                    - label:
-                        id: lbl_wifi_eye
-                        align: CENTER
-                        text: "SHOW"
-              - button:
-                  x: 323
-                  y: 74
-                  width: 88
-                  height: 52
-                  bg_color: 0x059669
-                  border_color: 0x34D399
-                  on_click:
-                    - lambda: |-
-                        std::vector<char> selected_ssid(64, 0);
-                        lv_dropdown_get_selected_str(id(wifi_ssid_dd)->obj, selected_ssid.data(), selected_ssid.size());
-                        const char *pass = lv_textarea_get_text(id(wifi_pass_ta));
-                        if (std::string(selected_ssid.data()) != "Tap SCAN to find Wi-Fi") {
-                          id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
-                          lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
-                          App.scheduler.set_timeout(nullptr, "wifi_reboot", 600, []() {
-                            App.safe_reboot();
-                          });
-                        }
-                  widgets:
-                    - label:
-                        align: CENTER
-                        text: "SAVE"
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "SCAN NETWORKS"
+                  - dropdown:
+                      id: wifi_ssid_dd
+                      x: 174
+                      y: 12
+                      width: 550
+                      height: 52
+                      options:
+                        - "Tap SCAN NETWORKS to find Wi-Fi"
+                  - textarea:
+                      id: wifi_pass_ta
+                      x: 12
+                      y: 80
+                      width: 470
+                      height: 54
+                      placeholder_text: "Wi-Fi Password"
+                      password_mode: true
+                      one_line: true
+                      on_click:
+                        - lvgl.keyboard.update:
+                            id: on_screen_kb
+                            textarea: wifi_pass_ta
+                        - lvgl.widget.show: on_screen_kb
+                      on_ready:
+                        - lvgl.widget.hide: on_screen_kb
+                  - button:
+                      id: btn_wifi_eye
+                      x: 494
+                      y: 80
+                      width: 96
+                      height: 54
+                      bg_color: 0x1E293B
+                      on_click:
+                        - lambda: |-
+                            bool cur = lv_textarea_get_password_mode(id(wifi_pass_ta));
+                            lv_textarea_set_password_mode(id(wifi_pass_ta), !cur);
+                            lv_label_set_text(id(lbl_wifi_eye), cur ? "HIDE" : "SHOW");
+                      widgets:
+                        - label:
+                            id: lbl_wifi_eye
+                            align: CENTER
+                            text: "SHOW"
+                  - button:
+                      x: 602
+                      y: 80
+                      width: 122
+                      height: 54
+                      bg_color: 0x059669
+                      border_color: 0x34D399
+                      on_click:
+                        - lambda: |-
+                            std::vector<char> selected_ssid(64, 0);
+                            lv_dropdown_get_selected_str(id(wifi_ssid_dd)->obj, selected_ssid.data(), selected_ssid.size());
+                            const char *pass = lv_textarea_get_text(id(wifi_pass_ta));
+                            if (std::string(selected_ssid.data()) != "Tap SCAN NETWORKS to find Wi-Fi") {
+                              id(my_wifi).save_wifi_sta(selected_ssid.data(), pass);
+                              lv_label_set_text(id(wifi_conn_info), "Saved! Rebooting to connect...");
+                              App.scheduler.set_timeout(nullptr, "wifi_reboot", 600, []() {
+                                App.safe_reboot();
+                              });
+                            }
+                      widgets:
+                        - label:
+                            align: CENTER
+                            text: "SAVE"
+              - name: "WEB & ACCESS POINT"
+                pad_all: 12
+                scrollable: false
+                widgets:
+                  - obj:
+                      x: 12
+                      y: 12
+                      width: 712
+                      height: 280
+                      bg_color: 0x0B0F17
+                      border_width: 1
+                      border_color: 0x1F2937
+                      radius: 12
+                      scrollable: false
+                      pad_all: 0
+                      widgets:
+                        - obj:
+                            x: 0
+                            y: 20
+                            width: 5
+                            height: 240
+                            bg_color: 0x8B5CF6
+                            border_width: 0
+                        - label:
+                            x: 24
+                            y: 22
+                            text_color: 0xA78BFA
+                            text: "LOCAL WEB DASHBOARD & BEERXML IMPORTER"
+                        - label:
+                            x: 24
+                            y: 66
+                            text_color: 0x94A3B8
+                            text: "Open this URL on any phone or computer connected to the same Wi-Fi:"
+                        - label:
+                            id: wifi_web_url
+                            x: 24
+                            y: 102
+                            text_font: montserrat_28
+                            text_color: 0x38BDF8
+                            text: "http://192.168.4"
+                        - label:
+                            x: 24
+                            y: 170
+                            text_color: 0xCBD5E1
+                            text: "Fallback Hotspot SSID:  BM-BrewController"
+                        - label:
+                            x: 24
+                            y: 206
+                            text_color: 0x64748B
+                            text: "Automatically activates if configured Wi-Fi network is unreachable."
 
         - keyboard:
             id: on_screen_kb
             align: BOTTOM_MID
             width: 800
             height: 242
+            hidden: true
